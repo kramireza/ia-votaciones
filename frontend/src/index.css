@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos adicionales */
+body {
+  @apply bg-gray-50 text-gray-800;
+}
+
+.container {
+  @apply max-w-4xl mx-auto px-4;
+}
+
+.card {
+  @apply bg-white shadow-md rounded-2xl p-6 my-4;
+}
