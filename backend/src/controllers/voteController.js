@@ -194,7 +194,7 @@ async function getDetailedVoteResults(req, res) {
 async function getPublicResults(req, res) {
   try {
     const election = await Election.findOne({
-      where: { status: "active" }
+      where: { status: "open" }
     });
 
     if (!election) {
