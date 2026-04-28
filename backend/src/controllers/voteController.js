@@ -70,7 +70,6 @@ async function getVotesForAdmin(req, res) {
 async function exportVotesExcel(req, res) {
   try {
     const { pollId } = req.query;
-
     const whereClause = pollId ? { pollId } : {};
 
     const votes = await Vote.findAll({
@@ -189,17 +188,27 @@ async function getDetailedVoteResults(req, res) {
 }
 
 // ============================================================
-// RESULTADOS PÚBLICOS
+// RESULTADOS PÚBLICOS PRO+2
 // ============================================================
 async function getPublicResults(req, res) {
   try {
-    const election = await Election.findOne({
+    let election = await Election.findOne({
       where: { status: "open" }
     });
 
+    let isClosed = false;
+
+    if (!election) {
+      election = await Election.findOne({
+        order: [["updatedAt", "DESC"]]
+      });
+
+      isClosed = true;
+    }
+
     if (!election) {
       return res.status(404).json({
-        message: "No hay elección activa."
+        message: "No hay elecciones disponibles."
       });
     }
 
@@ -222,12 +231,30 @@ async function getPublicResults(req, res) {
       };
     });
 
+    const ranked = [...options].sort((a, b) => b.votes - a.votes);
+    const winner = ranked[0] || null;
+
+    const centerStats = {
+      VS: votes.filter(v => v.studentCenter === "VS").length,
+      CU: votes.filter(v => v.studentCenter === "CU").length,
+      Danlí: votes.filter(v => v.studentCenter === "Danlí").length,
+      Otros: votes.filter(
+        v =>
+          v.studentCenter !== "VS" &&
+          v.studentCenter !== "CU" &&
+          v.studentCenter !== "Danlí"
+      ).length
+    };
+
     return res.json({
       pollId,
       title: election.title,
       totalVotes,
       updatedAt: new Date(),
-      options
+      options,
+      centerStats,
+      isClosed,
+      winner
     });
 
   } catch (error) {
