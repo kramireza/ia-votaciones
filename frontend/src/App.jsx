@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import VotingPage from "./pages/VotingPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import PublicResults from "./pages/PublicResults";
 
 export default function App() {
   const [student, setStudent] = useState(() => {
@@ -12,8 +13,13 @@ export default function App() {
     return data ? JSON.parse(data) : null;
   });
 
-  const [adminToken, setAdminToken] = useState(localStorage.getItem("admin_token") || null);
+  const [adminToken, setAdminToken] = useState(
+    localStorage.getItem("admin_token") || null
+  );
 
+  // ==========================================================
+  // ESTUDIANTE
+  // ==========================================================
   function handleVerified(studentData) {
     setStudent(studentData);
     localStorage.setItem("voting_student", JSON.stringify(studentData));
@@ -24,6 +30,9 @@ export default function App() {
     localStorage.removeItem("voting_student");
   }
 
+  // ==========================================================
+  // ADMIN
+  // ==========================================================
   function handleAdminLogin(token) {
     setAdminToken(token);
     localStorage.setItem("admin_token", token);
@@ -39,7 +48,9 @@ export default function App() {
       <Layout>
         <Routes>
 
-          {/* Página principal */}
+          {/* ================================================== */}
+          {/* HOME */}
+          {/* ================================================== */}
           <Route
             path="/"
             element={
@@ -50,14 +61,18 @@ export default function App() {
             }
           />
 
-          {/* Página de votación */}
+          {/* ================================================== */}
+          {/* VOTAR */}
+          {/* ================================================== */}
           <Route
             path="/votar"
             element={
               student ? (
                 <VotingPage
                   student={student}
-                  onVoted={() => setTimeout(() => handleStudentLogout(), 5000)}
+                  onVoted={() =>
+                    setTimeout(() => handleStudentLogout(), 5000)
+                  }
                 />
               ) : (
                 <Navigate to="/" />
@@ -65,12 +80,25 @@ export default function App() {
             }
           />
 
-          {/* Panel Admin */}
+          {/* ================================================== */}
+          {/* RESULTADOS PÚBLICOS */}
+          {/* ================================================== */}
+          <Route
+            path="/resultados"
+            element={<PublicResults />}
+          />
+
+          {/* ================================================== */}
+          {/* ADMIN */}
+          {/* ================================================== */}
           <Route
             path="/admin"
             element={
               adminToken ? (
-                <AdminDashboard token={adminToken} onLogout={handleAdminLogout} />
+                <AdminDashboard
+                  token={adminToken}
+                  onLogout={handleAdminLogout}
+                />
               ) : (
                 <Navigate to="/" />
               )

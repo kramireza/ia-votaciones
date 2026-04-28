@@ -44,6 +44,10 @@ export default {
       }
     }),
 
+  // Resultados públicos
+  getPublicResults: () =>
+    api.get(`/votes/public/results`),
+
   // -----------------------------
   // ADMIN LOGIN  🔥 (FALTABA)
   // -----------------------------

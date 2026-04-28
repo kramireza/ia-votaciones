@@ -1,59 +1,71 @@
-// backend/src/controllers/voteController.js
 const Vote = require("../models/Vote");
 const Election = require("../models/Election");
 const { exportVotesToExcel, exportResultsToExcel } = require("../utils/excelExport");
-const { Op, fn, col } = require("sequelize");
-
+const { fn, col } = require("sequelize");
 const logAction = require("../utils/logAction");
 
 // ============================================================
-//   REGISTRAR VOTO
+// REGISTRAR VOTO
 // ============================================================
 async function castVote(req, res) {
-  const { studentAccount, studentName, studentCenter, pollId, option } = req.body;
+  try {
+    const { studentAccount, studentName, studentCenter, pollId, option } = req.body;
 
-  // 🔥 LOG 1: payload recibido
-  console.log("BACKEND CAST PAYLOAD:", req.body);
+    if (!studentAccount || !pollId || !option) {
+      return res.status(400).json({ message: "Faltan datos." });
+    }
 
-  if (!studentAccount || !pollId || !option)
-    return res.status(400).json({ message: "Faltan datos" });
+    const election = await Election.findOne({ where: { pollId } });
 
-  const election = await Election.findOne({ where: { pollId } });
+    if (!election) {
+      return res.status(400).json({ message: "Elección no válida." });
+    }
 
-  if (!election)
-    return res.status(400).json({ message: "Elección no válida" });
+    const existing = await Vote.findOne({
+      where: { pollId, studentAccount }
+    });
 
-  const existing = await Vote.findOne({
-    where: { pollId, studentAccount }
-  });
+    if (existing) {
+      return res.status(400).json({ message: "Ya votó en esta votación." });
+    }
 
-  // 🔥 LOG 2: voto encontrado
-  console.log("BACKEND EXISTING VOTE:", existing);
+    const vote = await Vote.create({
+      studentAccount,
+      studentName,
+      studentCenter,
+      pollId,
+      option
+    });
 
-  if (existing)
-    return res.status(400).json({ message: "Ya votó en esta votación" });
+    return res.json({
+      message: "Voto registrado correctamente.",
+      vote
+    });
 
-  const vote = await Vote.create({
-    studentAccount,
-    studentName,
-    studentCenter,
-    pollId,
-    option
-  });
-
-  res.json({ message: "Voto registrado", vote });
+  } catch (error) {
+    console.error("Error castVote:", error);
+    return res.status(500).json({ message: "Error interno al registrar voto." });
+  }
 }
 
 // ============================================================
-//   OBTENER VOTOS PARA ADMIN
+// ADMIN - TODOS LOS VOTOS
 // ============================================================
 async function getVotesForAdmin(req, res) {
-  const votes = await Vote.findAll({ order: [["timestamp","DESC"]] });
-  res.json(votes);
+  try {
+    const votes = await Vote.findAll({
+      order: [["timestamp", "DESC"]]
+    });
+
+    return res.json(votes);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error obteniendo votos." });
+  }
 }
 
 // ============================================================
-//   EXPORTAR TODOS LOS VOTOS A EXCEL (CON LOG)
+// EXPORTAR EXCEL VOTOS
 // ============================================================
 async function exportVotesExcel(req, res) {
   try {
@@ -63,34 +75,43 @@ async function exportVotesExcel(req, res) {
 
     const votes = await Vote.findAll({
       where: whereClause,
-      order: [["timestamp","DESC"]],
+      order: [["timestamp", "DESC"]],
       raw: true
     });
+
     const buffer = await exportVotesToExcel(votes);
 
-    // ✅ LOG
-    logAction(req.admin, "Exportó Excel", "Excel completo de votos");
+    logAction(req.admin, "Exportó Excel", "Excel de votos");
 
-    res.setHeader("Content-Disposition", `attachment; filename="votos_${pollId || "todos"}.xlsx"`);
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="votos_${pollId || "todos"}.xlsx"`
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
     return res.send(buffer);
 
-  } catch (err) {
-    console.error("Excel error:", err);
-    res.status(500).json({ message: "Error generando Excel." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error generando Excel." });
   }
 }
 
 // ============================================================
-//   EXPORTAR RESULTADOS AGRUPADOS A EXCEL (CON LOG)
+// EXPORTAR EXCEL RESULTADOS
 // ============================================================
 async function exportResultsExcel(req, res) {
   try {
     const { pollId } = req.query;
 
     if (!pollId) {
-      return res.status(400).json({ message: "pollId es requerido" });
+      return res.status(400).json({ message: "pollId requerido." });
     }
+
     const results = await Vote.findAll({
       where: { pollId },
       attributes: [
@@ -104,36 +125,48 @@ async function exportResultsExcel(req, res) {
 
     const buffer = await exportResultsToExcel(results);
 
-    // ✅ LOG
-    logAction(req.admin, "Exportó Resultados Excel", "Excel de resultados agrupados");
+    logAction(req.admin, "Exportó Resultados Excel", "Excel agrupado");
 
-    res.setHeader("Content-Disposition", `attachment; filename="resultados_${pollId}.xlsx"`);
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="resultados_${pollId}.xlsx"`
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
     return res.send(buffer);
 
-  } catch (err) {
-    console.error("Excel error:", err);
-    res.status(500).json({ message: "Error generando Excel." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error generando Excel." });
   }
 }
 
 // ============================================================
-//   RESULTADOS DETALLADOS
+// RESULTADOS DETALLADOS ADMIN
 // ============================================================
 async function getDetailedVoteResults(req, res) {
-  const { pollId } = req.params;
-
   try {
-    const election = await Election.findOne({ where: { pollId } });
-    if (!election)
-      return res.status(404).json({ message: "Elección no encontrada" });
+    const { pollId } = req.params;
 
-    const votes = await Vote.findAll({ where: { pollId }, raw: true });
+    const election = await Election.findOne({ where: { pollId } });
+
+    if (!election) {
+      return res.status(404).json({ message: "Elección no encontrada." });
+    }
+
+    const votes = await Vote.findAll({
+      where: { pollId },
+      raw: true
+    });
+
     const totalVotes = votes.length;
 
-    const detailedOptions = election.options.map(opt => {
-      const count = votes.filter(v => v.option === opt.text).length;
+    const options = election.options.map((opt) => {
+      const count = votes.filter((v) => v.option === opt.text).length;
 
       return {
         text: opt.text,
@@ -142,45 +175,102 @@ async function getDetailedVoteResults(req, res) {
       };
     });
 
-    res.json({
+    return res.json({
       pollId,
       title: election.title,
       totalVotes,
-      options: detailedOptions
+      options
     });
 
-  } catch (err) {
-    console.error("Error en resultados detallados:", err);
-    res.status(500).json({ message: "Error obteniendo resultados detallados." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error obteniendo resultados." });
   }
 }
 
 // ============================================================
-//   REVISION DE VOTOS
+// RESULTADOS PÚBLICOS
 // ============================================================
+async function getPublicResults(req, res) {
+  try {
+    const election = await Election.findOne({
+      where: { status: "active" }
+    });
 
+    if (!election) {
+      return res.status(404).json({
+        message: "No hay elección activa."
+      });
+    }
+
+    const pollId = election.pollId;
+
+    const votes = await Vote.findAll({
+      where: { pollId },
+      raw: true
+    });
+
+    const totalVotes = votes.length;
+
+    const options = election.options.map((opt) => {
+      const count = votes.filter((v) => v.option === opt.text).length;
+
+      return {
+        text: opt.text,
+        imageUrl: opt.imageUrl || null,
+        votes: count
+      };
+    });
+
+    return res.json({
+      pollId,
+      title: election.title,
+      totalVotes,
+      updatedAt: new Date(),
+      options
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error obteniendo resultados públicos."
+    });
+  }
+}
+
+// ============================================================
+// CHECK VOTO
+// ============================================================
 async function checkVote(req, res) {
-  const { pollId, studentAccount } = req.query;
+  try {
+    const { pollId, studentAccount } = req.query;
 
-  if (!pollId || !studentAccount) {
-    return res.json({ hasVoted: false });
+    if (!pollId || !studentAccount) {
+      return res.json({ hasVoted: false });
+    }
+
+    const vote = await Vote.findOne({
+      where: { pollId, studentAccount }
+    });
+
+    return res.json({
+      hasVoted: !!vote
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      hasVoted: false
+    });
   }
-
-  const vote = await Vote.findOne({
-    where: { pollId, studentAccount }
-  });
-
-  res.json({ hasVoted: !!vote });
 }
 
-// ============================================================
-//   EXPORTAR FUNCIONES
-// ============================================================
-module.exports = { 
-  castVote, 
-  getVotesForAdmin, 
-  exportVotesExcel, 
+module.exports = {
+  castVote,
+  getVotesForAdmin,
+  exportVotesExcel,
   exportResultsExcel,
   getDetailedVoteResults,
+  getPublicResults,
   checkVote
 };

@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 export default function StudentVerify({ onVerified }) {
+  const navigate = useNavigate();
+
   const [account, setAccount] = useState("");
   const [center, setCenter] = useState("");
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ⭐ ELECCIÓN ACTIVA
   const [activePollId, setActivePollId] = useState(null);
 
   // ========================================================
-  //   Cargar ELECCIÓN ACTIVA al abrir la página
+  // CARGAR ELECCIÓN ACTIVA
   // ========================================================
   useEffect(() => {
     async function load() {
@@ -22,11 +24,12 @@ export default function StudentVerify({ onVerified }) {
         setActivePollId(null);
       }
     }
+
     load();
   }, []);
 
   // ========================================================
-  //   Verificación del estudiante
+  // VERIFICAR ESTUDIANTE
   // ========================================================
   async function handleVerify(e) {
     e.preventDefault();
@@ -34,55 +37,63 @@ export default function StudentVerify({ onVerified }) {
     setLoading(true);
 
     try {
-      const res = await api.verifyStudent(account.trim(), center.trim());
+      const res = await api.verifyStudent(
+        account.trim(),
+        center.trim()
+      );
+
       const studentData = res.data;
+
       setLoading(false);
 
-      // ⭐ Si NO hay elección activa → no permitir voto
       if (!activePollId) {
         setMessage({
           type: "error",
-          text: "No hay una elección activa en este momento.",
+          text: "No hay una elección activa en este momento."
         });
         return;
       }
 
-      if (activePollId) {
-        // 1️⃣ Consultar al backend si ya votó realmente
-        try {
-          const backend = await api.checkVote(activePollId, studentData.accountNumber);
+      try {
+        const backend = await api.checkVote(
+          activePollId,
+          studentData.accountNumber
+        );
 
-          if (backend.data.hasVoted) {
-            setMessage({
-              type: "error",
-              text: "Ya has realizado tu voto para esta elección."
-            });
-
-            return;
-          }
-        } catch (err) {
-          console.log("Error al verificar voto en backend:", err);
+        if (backend.data.hasVoted) {
+          setMessage({
+            type: "error",
+            text: "Ya has realizado tu voto para esta elección."
+          });
+          return;
         }
+      } catch (err) {
+        console.log(err);
       }
 
-      // ⭐ Si no ha votado → permitir entrada
       setMessage({
         type: "success",
-        text: `Bienvenido(a), ${studentData.name}`,
+        text: `Bienvenido(a), ${studentData.name}`
       });
 
       onVerified(studentData);
 
     } catch (err) {
       setLoading(false);
+
       const text =
-        err.response?.data?.message || "Error de conexión.";
-      setMessage({ type: "error", text });
+        err.response?.data?.message ||
+        "Error de conexión.";
+
+      setMessage({
+        type: "error",
+        text
+      });
     }
   }
 
   // ========================================================
-  //   Render
+  // RENDER
   // ========================================================
   return (
     <div className="card">
@@ -90,27 +101,31 @@ export default function StudentVerify({ onVerified }) {
         Verificación de Estudiante
       </h2>
 
-      <form onSubmit={handleVerify} className="space-y-4">
-        
-        {/* Número de cuenta */}
+      <form
+        onSubmit={handleVerify}
+        className="space-y-4"
+      >
+        {/* CUENTA */}
         <div>
           <label className="block text-sm font-medium mb-1">
             Número de cuenta
           </label>
+
           <input
             value={account}
             onChange={(e) => setAccount(e.target.value)}
             className="w-full border rounded-lg p-2"
-            placeholder="ej. 20190000111"
+            placeholder="Ej. 20190000111"
             required
           />
         </div>
 
-        {/* Centro */}
+        {/* CENTRO */}
         <div>
           <label className="block text-sm font-medium mb-1">
             Centro
           </label>
+
           <select
             value={center}
             onChange={(e) => setCenter(e.target.value)}
@@ -125,8 +140,8 @@ export default function StudentVerify({ onVerified }) {
           </select>
         </div>
 
-        {/* Botones */}
-        <div className="flex items-center gap-3">
+        {/* BOTONES */}
+        <div className="flex flex-wrap gap-3">
           <button
             disabled={loading}
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
@@ -141,19 +156,28 @@ export default function StudentVerify({ onVerified }) {
               setCenter("");
               setMessage(null);
             }}
-            className="px-3 py-2 border rounded-lg text-sm"
+            className="px-4 py-2 border rounded-lg"
           >
             Limpiar
           </button>
+
+          {/* 🔥 NUEVO */}
+          <button
+            type="button"
+            onClick={() => navigate("/resultados")}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg"
+          >
+            Ver Resultados Públicos
+          </button>
         </div>
 
-        {/* Mensajes */}
+        {/* MENSAJES */}
         {message && (
           <div
             className={
               message.type === "error"
-                ? "mt-3 text-red-600"
-                : "mt-3 text-green-600"
+                ? "text-red-600"
+                : "text-green-600"
             }
           >
             {message.text}
