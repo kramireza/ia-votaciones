@@ -44,7 +44,7 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/votaciones">
       <Layout>
         <Routes>
 
