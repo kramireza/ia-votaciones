@@ -24,12 +24,20 @@ router.post("/cast", castVote);
 // Revisar si ya votó
 router.get("/check", checkVote);
 
-// 🔥 NUEVO: Resultados públicos
+// Resultados públicos
 router.get("/public/results", getPublicResults);
 
 // ============================================================
 // ADMIN
 // ============================================================
+
+// 🔥 NUEVO: Resultados generales admin
+router.get(
+  "/results",
+  adminAuth,
+  permit("superadmin", "editor"),
+  getPublicResults
+);
 
 // Todos los votos
 router.get(
