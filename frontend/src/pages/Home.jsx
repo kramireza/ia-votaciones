@@ -25,8 +25,16 @@ function SecretAdminTrigger({ onUnlock }) {
   }
 
   return (
-    <button onClick={handleClick} className="text-left">
-      <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white drop-shadow-lg">
+    <button
+      onClick={handleClick}
+      className="text-left group"
+    >
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-xs font-semibold text-indigo-100 mb-4">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Proceso Oficial
+      </div>
+
+      <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white drop-shadow-lg transition group-hover:scale-[1.01]">
         Sistema de Votaciones
       </h1>
 
@@ -37,30 +45,52 @@ function SecretAdminTrigger({ onUnlock }) {
   );
 }
 
-export default function Home({ onVerified, onAdminLogin }) {
-  const [showAdmin, setShowAdmin] = useState(false);
+export default function Home({
+  onVerified,
+  onAdminLogin
+}) {
+  const [showAdmin, setShowAdmin] =
+    useState(false);
+
+  const [loadingVerify, setLoadingVerify] =
+    useState(false);
+
   const navigate = useNavigate();
 
-  function handleAdminLoginSuccess(token) {
+  function handleAdminLoginSuccess(
+    token
+  ) {
     onAdminLogin(token);
     navigate("/admin");
   }
 
-  async function handleStudentVerified(studentData) {
+  async function handleStudentVerified(
+    studentData
+  ) {
     onVerified(studentData);
 
     try {
-      const res = await api.getActiveElection();
+      setLoadingVerify(true);
+
+      const res =
+        await api.getActiveElection();
+
       const active = res.data;
 
       if (active) {
         navigate("/votar");
       } else {
-        alert("No hay una elección activa en este momento.");
+        alert(
+          "No hay una elección activa en este momento."
+        );
       }
     } catch (err) {
       console.error(err);
-      alert("Error buscando elección activa.");
+      alert(
+        "Error buscando elección activa."
+      );
+    } finally {
+      setLoadingVerify(false);
     }
   }
 
@@ -68,174 +98,171 @@ export default function Home({ onVerified, onAdminLogin }) {
     <div className="space-y-8">
 
       {/* HERO */}
-      <section className="rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-slate-900 via-indigo-800 to-purple-700 text-white p-8 md:p-12">
+      <section className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-slate-900 via-indigo-800 to-purple-700 text-white p-6 md:p-12">
 
-        <div className="grid lg:grid-cols-2 gap-8 items-center">
+        <div className="absolute -top-20 -right-10 w-72 h-72 bg-cyan-400/20 blur-3xl rounded-full"></div>
+        <div className="absolute -bottom-20 -left-10 w-72 h-72 bg-fuchsia-400/20 blur-3xl rounded-full"></div>
+
+        <div className="relative grid lg:grid-cols-2 gap-8 items-center">
 
           {/* LEFT */}
           <div>
             <SecretAdminTrigger
-              onUnlock={() => setShowAdmin(true)}
+              onUnlock={() =>
+                setShowAdmin(true)
+              }
             />
 
             <p className="mt-5 text-slate-200 text-lg max-w-xl leading-relaxed">
-              Plataforma oficial para procesos electorales
-              estudiantiles. Participa de forma segura,
-              rápida y transparente.
+              Plataforma oficial para procesos electorales estudiantiles.
+              Participa de forma segura, rápida y transparente desde cualquier dispositivo.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
 
               <button
-                onClick={() => navigate("/resultados")}
-                className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-semibold shadow-lg hover:scale-105 transition"
+                onClick={() =>
+                  navigate(
+                    "/resultados"
+                  )
+                }
+                className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-semibold shadow-lg hover:scale-105 hover:shadow-2xl transition"
               >
                 📊 Ver Resultados Públicos
               </button>
 
-              <div className="px-5 py-3 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm">
+              <div className="px-5 py-3 bg-white/10 border border-white/20 rounded-xl backdrop-blur-md hover:bg-white/15 transition">
                 🔒 Voto seguro
               </div>
 
             </div>
           </div>
 
-          {/* RIGHT STATS */}
+          {/* RIGHT */}
           <div className="grid grid-cols-2 gap-4">
 
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
-              <div className="text-sm text-slate-200">
-                Proceso
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                Transparente
-              </div>
-            </div>
+            {[
+              ["📌", "Proceso", "Transparente"],
+              ["🕒", "Acceso", "24/7"],
+              ["🛡️", "Seguridad", "Verificada"],
+              ["📈", "Resultados", "En Vivo"]
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10 hover:-translate-y-1 hover:bg-white/15 transition duration-300"
+              >
+                <div className="text-2xl">
+                  {item[0]}
+                </div>
 
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
-              <div className="text-sm text-slate-200">
-                Acceso
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                24/7
-              </div>
-            </div>
+                <div className="text-sm text-slate-200 mt-2">
+                  {item[1]}
+                </div>
 
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
-              <div className="text-sm text-slate-200">
-                Seguridad
+                <div className="text-2xl font-bold mt-1">
+                  {item[2]}
+                </div>
               </div>
-              <div className="text-2xl font-bold mt-1">
-                Verificada
-              </div>
-            </div>
-
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
-              <div className="text-sm text-slate-200">
-                Resultados
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                En Vivo
-              </div>
-            </div>
+            ))}
 
           </div>
 
         </div>
-
       </section>
 
-      {/* CONTENIDO */}
+      {/* CONTENT */}
       <section className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
 
-        {/* VERIFICACIÓN */}
-        <div>
+        {/* VERIFY */}
+        <div className="space-y-4">
+
+          {loadingVerify && (
+            <div className="rounded-2xl px-4 py-3 font-medium animate-pulse bg-indigo-50 border border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-300">
+              Verificando elección activa...
+            </div>
+          )}
+
           <StudentVerify
-            onVerified={handleStudentVerified}
+            onVerified={
+              handleStudentVerified
+            }
           />
         </div>
 
-        {/* PANEL LATERAL */}
+        {/* SIDE */}
         <div className="space-y-6">
 
-          {/* INSTRUCCIONES */}
-          <div className="bg-white rounded-3xl shadow-lg border p-6">
+          {/* INSTRUCTIONS */}
+          <div className="rounded-3xl shadow-lg border p-6 bg-white dark:bg-slate-900 dark:border-slate-800">
 
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">
+            <h2 className="text-2xl font-bold mb-5 text-slate-900 dark:text-white">
               Instrucciones rápidas
             </h2>
 
             <div className="space-y-4">
 
-              <div className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">
-                  1
-                </div>
-                <div>
-                  <div className="font-semibold">
-                    Ingresa tu cuenta
+              {[
+                [
+                  "1",
+                  "Ingresa tu cuenta",
+                  "Escribe tu número de cuenta institucional.",
+                  "bg-indigo-600"
+                ],
+                [
+                  "2",
+                  "Selecciona tu centro",
+                  "Elige VS, CU, Danlí u otro.",
+                  "bg-indigo-600"
+                ],
+                [
+                  "3",
+                  "Verifica tus datos",
+                  "El sistema validará tu elegibilidad.",
+                  "bg-indigo-600"
+                ],
+                [
+                  "4",
+                  "Emite tu voto",
+                  "Participa de manera segura y confidencial.",
+                  "bg-emerald-600"
+                ]
+              ].map((step, i) => (
+                <div
+                  key={i}
+                  className="flex gap-4 items-start rounded-2xl p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                >
+                  <div
+                    className={`w-9 h-9 rounded-full text-white grid place-items-center font-bold ${step[3]}`}
+                  >
+                    {step[0]}
                   </div>
-                  <div className="text-sm text-slate-500">
-                    Escribe tu número de cuenta institucional.
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">
-                  2
-                </div>
-                <div>
-                  <div className="font-semibold">
-                    Selecciona tu centro
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    Elige VS, CU, Danlí u otro.
-                  </div>
-                </div>
-              </div>
+                  <div>
+                    <div className="font-semibold text-slate-900 dark:text-white">
+                      {step[1]}
+                    </div>
 
-              <div className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">
-                  3
-                </div>
-                <div>
-                  <div className="font-semibold">
-                    Verifica tus datos
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    El sistema validará tu elegibilidad.
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      {step[2]}
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex gap-3 items-start">
-                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white grid place-items-center font-bold">
-                  4
-                </div>
-                <div>
-                  <div className="font-semibold">
-                    Emite tu voto
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    Participa de manera segura y confidencial.
-                  </div>
-                </div>
-              </div>
+              ))}
 
             </div>
-
           </div>
 
-          {/* LOGIN ADMIN */}
+          {/* ADMIN */}
           {showAdmin && (
-            <div className="bg-white rounded-3xl shadow-xl border p-6">
-              <h2 className="text-xl font-bold mb-4">
+            <div className="rounded-3xl shadow-xl border p-6 animate-in fade-in duration-300 bg-white dark:bg-slate-900 dark:border-slate-800">
+              <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
                 Acceso Administrador
               </h2>
 
               <AdminLogin
-                onLogin={handleAdminLoginSuccess}
+                onLogin={
+                  handleAdminLoginSuccess
+                }
               />
             </div>
           )}
@@ -243,7 +270,6 @@ export default function Home({ onVerified, onAdminLogin }) {
         </div>
 
       </section>
-
     </div>
   );
 }

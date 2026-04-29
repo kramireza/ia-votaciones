@@ -1,49 +1,193 @@
 import React, { useState } from "react";
 import api from "../services/api";
 
-export default function StudentsPanel({ token }) {
-  const [csvFile, setCsvFile] = useState(null);
-  const [msg, setMsg] = useState(null);
+export default function StudentsPanel({
+  token
+}) {
+  const [csvFile, setCsvFile] =
+    useState(null);
+
+  const [msg, setMsg] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(false);
 
   async function uploadCSV(e) {
     e.preventDefault();
 
     if (!csvFile) {
-      setMsg({ type: "error", text: "Selecciona un archivo CSV." });
+      setMsg({
+        type: "error",
+        text:
+          "Selecciona un archivo CSV."
+      });
       return;
     }
 
     try {
-      const res = await api.uploadStudentsCSV(csvFile, token);
-      setMsg({ type: "success", text: `Insertados: ${res.data.insertados}` });
+      setLoading(true);
+      setMsg(null);
+
+      const res =
+        await api.uploadStudentsCSV(
+          csvFile,
+          token
+        );
+
+      setMsg({
+        type: "success",
+        text: `Insertados: ${res.data.insertados}`
+      });
+
     } catch {
-      setMsg({ type: "error", text: "Error subiendo CSV." });
+      setMsg({
+        type: "error",
+        text:
+          "Error subiendo CSV."
+      });
+
+    } finally {
+      setLoading(false);
     }
   }
 
+  function handleFileChange(e) {
+    const file =
+      e.target.files?.[0] ||
+      null;
+
+    setCsvFile(file);
+    setMsg(null);
+  }
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Importar Estudiantes</h2>
+    <div className="space-y-6">
 
-      <form onSubmit={uploadCSV} className="p-4 border rounded-lg bg-white shadow">
-        <input
-          type="file"
-          name="file"
-          accept=".csv"
-          onChange={e => setCsvFile(e.target.files[0])}
-          className="mb-3"
-        />
+      {/* HEADER */}
+      <div className="rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 shadow-xl">
 
-        <button className="bg-blue-600 text-white px-4 py-2 rounded">
-          Subir CSV
-        </button>
-      </form>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-bold mb-4">
+          📥 Importación masiva
+        </div>
 
-      {msg && (
-        <p className={`mt-3 ${msg.type === "error" ? "text-red-600" : "text-green-600"}`}>
-          {msg.text}
+        <h2 className="text-3xl font-black">
+          Importar Estudiantes
+        </h2>
+
+        <p className="text-blue-100 mt-2">
+          Carga estudiantes desde archivo CSV para habilitar la verificación electoral.
         </p>
+      </div>
+
+      {/* UPLOAD CARD */}
+      <div className="rounded-3xl bg-white border shadow-xl p-6 space-y-6">
+
+        <form
+          onSubmit={uploadCSV}
+          className="space-y-5"
+        >
+
+          {/* DROPZONE VISUAL */}
+          <label className="block cursor-pointer">
+
+            <input
+              type="file"
+              name="file"
+              accept=".csv"
+              onChange={
+                handleFileChange
+              }
+              className="hidden"
+            />
+
+            <div className="rounded-2xl border-2 border-dashed border-slate-300 p-8 text-center hover:border-indigo-500 hover:bg-indigo-50 transition">
+
+              <div className="text-4xl mb-3">
+                📄
+              </div>
+
+              <div className="font-bold text-slate-800">
+                {csvFile
+                  ? csvFile.name
+                  : "Selecciona o arrastra tu archivo CSV"}
+              </div>
+
+              <div className="text-sm text-slate-500 mt-2">
+                Solo archivos .csv
+              </div>
+
+            </div>
+          </label>
+
+          {/* HELP */}
+          <div className="rounded-2xl bg-slate-50 border p-4 text-sm text-slate-600">
+            <div className="font-semibold text-slate-800 mb-2">
+              Formato recomendado:
+            </div>
+
+            <div>
+              numeroCuenta,nombre,centro
+            </div>
+
+            <div className="mt-2">
+              Ejemplo:
+              20190000111,Juan Pérez,VS
+            </div>
+          </div>
+
+          {/* ACTIONS */}
+          <div className="flex flex-col sm:flex-row gap-3">
+
+            <button
+              disabled={loading}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition disabled:opacity-60"
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+                  Subiendo...
+                </span>
+              ) : (
+                "📤 Subir CSV"
+              )}
+            </button>
+
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                setCsvFile(
+                  null
+                );
+                setMsg(
+                  null
+                );
+              }}
+              className="w-full sm:w-auto px-6 py-3 rounded-xl border font-semibold hover:bg-slate-50 transition disabled:opacity-60"
+            >
+              Limpiar
+            </button>
+
+          </div>
+
+        </form>
+      </div>
+
+      {/* MESSAGE */}
+      {msg && (
+        <div
+          className={`rounded-2xl px-4 py-3 border text-sm font-medium ${
+            msg.type ===
+            "error"
+              ? "bg-red-50 text-red-700 border-red-200"
+              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+          }`}
+        >
+          {msg.text}
+        </div>
       )}
+
     </div>
   );
 }

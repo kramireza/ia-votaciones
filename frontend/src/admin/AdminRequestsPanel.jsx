@@ -1,206 +1,650 @@
-// src/admin/AdminRequestsPanel.jsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback
+} from "react";
 import api from "../services/api";
 import { getRoleFromToken } from "../services/auth";
 
-export default function AdminRequestsPanel({ token }) {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null); // objeto solicitud seleccionado
-  const [showModal, setShowModal] = useState(false);
-  const [titleMap, setTitleMap] = useState({}); // map pollId -> title
+export default function AdminRequestsPanel({
+  token
+}) {
+  const [requests, setRequests] =
+    useState([]);
 
-  // role y username desde token
-  const role = getRoleFromToken(token);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [selected, setSelected] =
+    useState(null);
+
+  const [showModal, setShowModal] =
+    useState(false);
+
+  const [titleMap, setTitleMap] =
+    useState({});
+
+  const role =
+    getRoleFromToken(token);
+
   let username = null;
+
   try {
     if (token) {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      username = payload.username || payload.user || payload.name || payload.sub || null;
+      const payload = JSON.parse(
+        atob(
+          token.split(".")[1]
+        )
+      );
+
+      username =
+        payload.username ||
+        payload.user ||
+        payload.name ||
+        payload.sub ||
+        null;
     }
   } catch {
     username = null;
   }
 
-  const fetchRequests = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await api.getApprovalRequests(token);
-      let allRequests = Array.isArray(res.data) ? res.data : [];
-
-      // build title map (so we can show election name in list)
-      let map = {};
+  const fetchRequests =
+    useCallback(async () => {
       try {
-        const elect = await api.getElections(token);
-        if (Array.isArray(elect.data)) {
-          elect.data.forEach(e => {
-            map[e.pollId] = e.title;
-          });
+        setLoading(true);
+
+        const res =
+          await api.getApprovalRequests(
+            token
+          );
+
+        let allRequests =
+          Array.isArray(
+            res.data
+          )
+            ? res.data
+            : [];
+
+        let map = {};
+
+        try {
+          const elect =
+            await api.getElections(
+              token
+            );
+
+          if (
+            Array.isArray(
+              elect.data
+            )
+          ) {
+            elect.data.forEach(
+              (e) => {
+                map[
+                  e.pollId
+                ] =
+                  e.title;
+              }
+            );
+          }
+        } catch {}
+
+        setTitleMap(map);
+
+        if (
+          role ===
+            "editor" &&
+          username
+        ) {
+          allRequests =
+            allRequests.filter(
+              (
+                r
+              ) =>
+                r.requestedBy ===
+                username
+            );
         }
-      } catch {
-        // ignore, fallback to payload title or pollId
-      }
-      setTitleMap(map);
 
-      // si es editor, filtrar solo solicitudes propias
-      if (role === "editor" && username) {
-        allRequests = allRequests.filter(r => r.requestedBy === username);
-      }
+        setRequests(
+          allRequests
+        );
 
-      setRequests(allRequests);
-    } catch (err) {
-      console.error("Error cargando solicitudes:", err);
-      alert("Error cargando solicitudes");
-    } finally {
-      setLoading(false);
-    }
-  }, [token, role, username]);
+      } catch (err) {
+        console.error(err);
+
+      } finally {
+        setLoading(false);
+      }
+    }, [
+      token,
+      role,
+      username
+    ]);
 
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
-  async function openRequestModal(id) {
+  async function openRequestModal(
+    id
+  ) {
     try {
-      const res = await api.getApprovalRequest(id, token);
-      setSelected(res.data);
+      const res =
+        await api.getApprovalRequest(
+          id,
+          token
+        );
+
+      setSelected(
+        res.data
+      );
       setShowModal(true);
-    } catch (err) {
-      console.error("Error cargando solicitud:", err);
-      alert("Error cargando solicitud");
+
+    } catch {
+      alert(
+        "Error cargando solicitud"
+      );
     }
   }
 
-  async function approve(id) {
-    const comment = prompt("Comentario (opcional) al aprobar:");
+  async function approve(
+    id
+  ) {
+    const comment =
+      prompt(
+        "Comentario (opcional) al aprobar:"
+      ) || "";
+
     try {
-      await api.approveRequest(id, token, comment || "");
-      alert("Solicitud aprobada");
+      await api.approveRequest(
+        id,
+        token,
+        comment
+      );
+
       setShowModal(false);
       setSelected(null);
       await fetchRequests();
-    } catch (err) {
-      console.error("Error aprobando solicitud:", err);
-      alert("Error aprobando solicitud");
+
+    } catch {
+      alert(
+        "Error aprobando solicitud"
+      );
     }
   }
 
-  async function rejectReq(id) {
-    const comment = prompt("Motivo/rechazo (opcional):");
+  async function rejectReq(
+    id
+  ) {
+    const comment =
+      prompt(
+        "Motivo/rechazo (opcional):"
+      ) || "";
+
     try {
-      await api.rejectRequest(id, token, comment || "");
-      alert("Solicitud rechazada");
+      await api.rejectRequest(
+        id,
+        token,
+        comment
+      );
+
       setShowModal(false);
       setSelected(null);
       await fetchRequests();
-    } catch (err) {
-      console.error("Error rechazando solicitud:", err);
-      alert("Error rechazando solicitud");
+
+    } catch {
+      alert(
+        "Error rechazando solicitud"
+      );
     }
   }
 
-  function getReadableType(t) {
-    if (t === "edit") return "Solicitud de edición";
-    if (t === "delete") return "Solicitud de eliminación";
+  function getReadableType(
+    t
+  ) {
+    if (t === "edit")
+      return "Edición";
+
+    if (t === "delete")
+      return "Eliminación";
+
     return t;
   }
 
-  function getRequestTitle(r) {
+  function getRequestTitle(
+    r
+  ) {
     if (!r) return "";
-    if (r.payload && r.payload.title) return r.payload.title;
-    if (titleMap[r.pollId]) return titleMap[r.pollId];
+
+    if (
+      r.payload?.title
+    )
+      return r.payload.title;
+
+    if (
+      titleMap[
+        r.pollId
+      ]
+    )
+      return titleMap[
+        r.pollId
+      ];
+
     return r.pollId;
   }
 
+  function badgeStatus(
+    status
+  ) {
+    if (
+      status ===
+      "approved"
+    )
+      return "bg-emerald-100 text-emerald-700";
+
+    if (
+      status ===
+      "rejected"
+    )
+      return "bg-red-100 text-red-700";
+
+    return "bg-amber-100 text-amber-700";
+  }
+
+  const pendingCount =
+    requests.filter(
+      (r) =>
+        r.status ===
+        "pending"
+    ).length;
+
   return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-4">Solicitudes</h2>
+    <div className="space-y-6">
 
-      {loading ? <p>Cargando...</p> : null}
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <h3 className="font-semibold">Lista</h3>
-          <ul>
-            {requests.map(r => (
-              <li
-                key={r.id}
-                className="border p-2 mb-2 cursor-pointer hover:bg-gray-50"
-                onClick={() => openRequestModal(r.id)}
-              >
-                <div className="font-semibold">
-                  #{r.id} — {getReadableType(r.type)} — {getRequestTitle(r)}
-                </div>
-                <div className="text-sm text-gray-600">Solicitado por: {r.requestedBy}</div>
-                <div className="text-sm text-gray-500">
-                  {r.status} • {new Date(r.createdAt).toLocaleString()}
-                </div>
-              </li>
-            ))}
-            {requests.length === 0 && !loading && <li className="text-sm text-gray-600">No hay solicitudes.</li>}
-          </ul>
+      {/* HEADER */}
+      <div className="rounded-3xl bg-gradient-to-r from-amber-500 to-orange-600 text-white p-6 shadow-xl">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-bold mb-4">
+          🔄 Workflow de aprobación
         </div>
 
-        {/* Columna derecha ahora solo muestra un breve mensaje (o puede quedar vacía) */}
-        <div className="col-span-2">
-          <div className="border p-4 rounded h-full">
-            <p className="text-sm text-gray-600">Selecciona una solicitud de la lista para ver detalles en un pop-up.</p>
-          </div>
-        </div>
+        <h2 className="text-3xl font-black">
+          Solicitudes
+        </h2>
+
+        <p className="text-amber-100 mt-2">
+          Revisa cambios propuestos y aprueba o rechaza solicitudes.
+        </p>
       </div>
 
-      {/* MODAL — muestra detalles en pop-up */}
-      {showModal && selected && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center sm:items-center items-start p-4 z-50 overflow-auto">
-          <div className="bg-white p-6 rounded-lg w-full max-w-3xl shadow-xl max-h-[90vh] overflow-auto">
-            <h3 className="text-xl font-semibold mb-2">Solicitud #{selected.id}</h3>
+      {/* GRID */}
+      <div className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
 
-            <div className="mb-2">Tipo: <strong>{getReadableType(selected.type)}</strong></div>
-            <div className="mb-2">PollId: <strong>{selected.pollId}</strong></div>
-            <div className="mb-2">Nombre elección: <strong>{selected.payload?.title || titleMap[selected.pollId] || "—"}</strong></div>
-            <div className="mb-2">Solicitado por: <strong>{selected.requestedBy}</strong></div>
-            <div className="mb-2">Estado: <strong>{selected.status}</strong></div>
-            {selected.adminComment && <div className="mb-2"><strong>Comentario admin:</strong> {selected.adminComment}</div>}
-            <div className="mb-4 text-sm text-gray-500">Creado: {new Date(selected.createdAt).toLocaleString()}</div>
+        {/* LEFT LIST */}
+        <div className="rounded-3xl bg-white border shadow-xl p-5">
 
-            {selected.payload && (
-              <>
-                <h4 className="font-semibold mt-3">Datos propuestos</h4>
-                <div className="mb-2"><strong>Título:</strong> {selected.payload.title}</div>
-                <div className="mb-2"><strong>Opciones:</strong></div>
-                <ul>
-                  {Array.isArray(selected.payload.options) ? selected.payload.options.map((o, i) => (
-                    <li key={i} className="border p-2 mb-2">
-                      <div className="font-semibold">{o.text}</div>
-                      {o.description && <div className="text-sm text-gray-600">{o.description}</div>}
-                      {o.imageUrl && <img src={o.imageUrl} alt="" className="w-24 h-24 object-cover mt-2 border" />}
-                    </li>
-                  )) : <li>No hay opciones</li>}
-                </ul>
-              </>
-            )}
+          <h3 className="text-xl font-bold mb-4">
+            Lista de solicitudes
+          </h3>
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              {/* Si la solicitud está pendiente y el usuario es superadmin, mostrar aprobar/rechazar */}
-              {selected.status === "pending" && role === "superadmin" && (
-                <>
-                  <button onClick={() => approve(selected.id)} className="bg-green-600 text-white px-4 py-2 rounded">Aprobar</button>
-                  <button onClick={() => rejectReq(selected.id)} className="bg-red-600 text-white px-4 py-2 rounded">Rechazar</button>
-                </>
+          {loading ? (
+            <div className="py-10 text-center">
+              <div className="w-10 h-10 mx-auto rounded-full border-b-4 border-orange-600 animate-spin"></div>
+
+              <p className="mt-4 text-slate-500">
+                Cargando...
+              </p>
+            </div>
+          ) : requests.length ===
+            0 ? (
+            <div className="text-center text-slate-500 py-10">
+              No hay solicitudes.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {requests.map(
+                (
+                  r
+                ) => (
+                  <button
+                    key={
+                      r.id
+                    }
+                    onClick={() =>
+                      openRequestModal(
+                        r.id
+                      )
+                    }
+                    className="w-full text-left rounded-2xl border p-4 hover:shadow-lg hover:-translate-y-0.5 transition"
+                  >
+                    <div className="flex flex-wrap justify-between gap-3">
+
+                      <div>
+                        <div className="font-bold text-slate-900">
+                          #
+                          {
+                            r.id
+                          }{" "}
+                          —{" "}
+                          {getReadableType(
+                            r.type
+                          )}
+                        </div>
+
+                        <div className="text-sm text-slate-600 mt-1">
+                          {getRequestTitle(
+                            r
+                          )}
+                        </div>
+
+                        <div className="text-xs text-slate-500 mt-1">
+                          Por{" "}
+                          {
+                            r.requestedBy
+                          }
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${badgeStatus(
+                            r.status
+                          )}`}
+                        >
+                          {
+                            r.status
+                          }
+                        </span>
+
+                        <div className="text-xs text-slate-500 mt-2">
+                          {new Date(
+                            r.createdAt
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+
+                    </div>
+                  </button>
+                )
               )}
+            </div>
+          )}
+        </div>
 
-              {/* Si ya procesada o si es editor, mostrar sólo info y cerrar */}
-              {selected.status !== "pending" && (
-                <div className="text-sm text-gray-600 self-center">Solicitud {selected.status}.</div>
-              )}
+        {/* RIGHT SUMMARY */}
+        <div className="space-y-4">
 
-              <button onClick={() => { setShowModal(false); setSelected(null); }} className="px-4 py-2 border rounded">
-                Cerrar
-              </button>
+          <div className="rounded-3xl bg-white border shadow-xl p-5">
+            <h3 className="font-bold text-lg">
+              Resumen
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4 mt-4">
+
+              <div className="rounded-2xl bg-slate-100 p-4">
+                <div className="text-sm text-slate-500">
+                  Total
+                </div>
+
+                <div className="text-3xl font-black">
+                  {
+                    requests.length
+                  }
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-amber-50 p-4">
+                <div className="text-sm text-amber-700">
+                  Pendientes
+                </div>
+
+                <div className="text-3xl font-black text-amber-700">
+                  {
+                    pendingCount
+                  }
+                </div>
+              </div>
+
             </div>
           </div>
+
+          <div className="rounded-3xl bg-white border shadow-xl p-5 text-sm text-slate-600">
+            <h3 className="font-bold text-slate-900 mb-2">
+              Instrucciones
+            </h3>
+
+            <ul className="space-y-2">
+              <li>
+                • Selecciona una solicitud para ver detalles.
+              </li>
+              <li>
+                • Solo superadmin puede aprobar o rechazar.
+              </li>
+              <li>
+                • Toda acción queda registrada.
+              </li>
+            </ul>
+          </div>
+
         </div>
-      )}
+
+      </div>
+
+      {/* MODAL */}
+      {showModal &&
+        selected && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-start sm:items-center p-4 overflow-auto">
+            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-6 max-h-[92vh] overflow-auto">
+
+              <div className="flex flex-wrap justify-between gap-4 items-start">
+
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900">
+                    Solicitud #
+                    {
+                      selected.id
+                    }
+                  </h3>
+
+                  <p className="text-slate-500 mt-1">
+                    {
+                      getRequestTitle(
+                        selected
+                      )
+                    }
+                  </p>
+                </div>
+
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${badgeStatus(
+                    selected.status
+                  )}`}
+                >
+                  {
+                    selected.status
+                  }
+                </span>
+
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 mt-6">
+
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <div className="text-sm text-slate-500">
+                    Tipo
+                  </div>
+
+                  <div className="font-bold">
+                    {getReadableType(
+                      selected.type
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <div className="text-sm text-slate-500">
+                    Solicitado por
+                  </div>
+
+                  <div className="font-bold">
+                    {
+                      selected.requestedBy
+                    }
+                  </div>
+                </div>
+
+              </div>
+
+              {selected.payload && (
+                <div className="mt-6">
+
+                  <h4 className="text-lg font-bold mb-4">
+                    Datos propuestos
+                  </h4>
+
+                  <div className="rounded-2xl border p-4 mb-4">
+                    <div className="text-sm text-slate-500">
+                      Título
+                    </div>
+
+                    <div className="font-bold">
+                      {
+                        selected
+                          .payload
+                          .title
+                      }
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {Array.isArray(
+                      selected
+                        .payload
+                        .options
+                    ) &&
+                    selected
+                      .payload
+                      .options
+                      .length >
+                      0 ? (
+                      selected.payload.options.map(
+                        (
+                          o,
+                          i
+                        ) => (
+                          <div
+                            key={
+                              i
+                            }
+                            className="rounded-2xl border p-4"
+                          >
+                            <div className="flex gap-4 items-start">
+
+                              {o.imageUrl && (
+                                <img
+                                  src={
+                                    o.imageUrl
+                                  }
+                                  alt=""
+                                  className="w-24 h-24 rounded-xl object-cover border"
+                                />
+                              )}
+
+                              <div>
+                                <div className="font-bold">
+                                  {
+                                    o.text
+                                  }
+                                </div>
+
+                                {o.description && (
+                                  <div className="text-sm text-slate-500 mt-1">
+                                    {
+                                      o.description
+                                    }
+                                  </div>
+                                )}
+                              </div>
+
+                            </div>
+                          </div>
+                        )
+                      )
+                    ) : (
+                      <div className="text-slate-500">
+                        No hay opciones.
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
+
+              {selected.adminComment && (
+                <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                  <div className="text-sm text-slate-500">
+                    Comentario admin
+                  </div>
+
+                  <div className="font-medium">
+                    {
+                      selected.adminComment
+                    }
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3 mt-6">
+
+                {selected.status ===
+                  "pending" &&
+                  role ===
+                    "superadmin" && (
+                    <>
+                      <button
+                        onClick={() =>
+                          approve(
+                            selected.id
+                          )
+                        }
+                        className="px-5 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow hover:bg-emerald-700 transition"
+                      >
+                        ✅ Aprobar
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          rejectReq(
+                            selected.id
+                          )
+                        }
+                        className="px-5 py-3 rounded-xl bg-red-600 text-white font-bold shadow hover:bg-red-700 transition"
+                      >
+                        ❌ Rechazar
+                      </button>
+                    </>
+                  )}
+
+                <button
+                  onClick={() => {
+                    setShowModal(
+                      false
+                    );
+                    setSelected(
+                      null
+                    );
+                  }}
+                  className="px-5 py-3 rounded-xl border font-semibold"
+                >
+                  Cerrar
+                </button>
+
+              </div>
+
+            </div>
+          </div>
+        )}
+
     </div>
   );
 }
