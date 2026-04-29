@@ -569,25 +569,31 @@ export default function ElectionsPanel({ token }) {
 
       {/* STATS */}
       <div className="grid md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl shadow border p-5">
-          <div className="text-sm text-gray-500">Total</div>
-          <div className="text-3xl font-black">{total}</div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow border dark:border-slate-800 p-5">
+          <div className="text-sm text-gray-500 dark:text-slate-400">Total</div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white">
+            {total}
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow border p-5">
-          <div className="text-sm text-gray-500">Activas</div>
-          <div className="text-3xl font-black text-green-600">{active}</div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow border dark:border-slate-800 p-5">
+          <div className="text-sm text-gray-500 dark:text-slate-400">Activas</div>
+          <div className="text-3xl font-black text-green-600">
+            {active}
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow border p-5">
-          <div className="text-sm text-gray-500">Cerradas</div>
-          <div className="text-3xl font-black text-red-600">{closed}</div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow border dark:border-slate-800 p-5">
+          <div className="text-sm text-gray-500 dark:text-slate-400">Cerradas</div>
+          <div className="text-3xl font-black text-red-600">
+            {closed}
+          </div>
         </div>
       </div>
 
       {/* FORM CREATE */}
-      <div className="bg-white rounded-3xl shadow-xl border p-6 space-y-4">
-        <h3 className="text-xl font-bold">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border dark:border-slate-800 p-6 space-y-4">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white">
           Crear nueva elección
         </h3>
 
@@ -599,14 +605,14 @@ export default function ElectionsPanel({ token }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Título general"
-            className="w-full border rounded-xl px-4 py-3"
+            className="w-full border rounded-xl px-4 py-3 bg-white text-slate-900 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500"
             required
           />
 
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full border rounded-xl px-4 py-3"
+            className="w-full border rounded-xl px-4 py-3 bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           >
             <option value="simple">
               Elección simple
@@ -623,10 +629,10 @@ export default function ElectionsPanel({ token }) {
               {options.map((opt, i) => (
                 <div
                   key={i}
-                  className="bg-slate-50 border rounded-2xl p-4"
+                  className="bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4"
                 >
                   <input
-                    className="w-full border rounded-xl px-4 py-3 mb-3"
+                    className="w-full border rounded-xl px-4 py-3 mb-3 bg-white text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                     value={opt.text}
                     placeholder={`Opción ${i + 1}`}
                     onChange={(e) =>
@@ -640,7 +646,7 @@ export default function ElectionsPanel({ token }) {
 
                   <textarea
                     rows="2"
-                    className="w-full border rounded-xl px-4 py-3 mb-3"
+                    className="w-full border rounded-xl px-4 py-3 mb-3 bg-white text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                     placeholder="Descripción"
                     value={opt.description}
                     onChange={(e) =>
@@ -694,7 +700,7 @@ export default function ElectionsPanel({ token }) {
               {sections.map((sec, i) => (
                 <div
                   key={i}
-                  className="bg-slate-50 border rounded-2xl p-4"
+                  className="bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4"
                 >
                   <input
                     className="w-full border rounded-xl px-4 py-3 mb-3"
@@ -711,10 +717,10 @@ export default function ElectionsPanel({ token }) {
                   {sec.options.map((opt, j) => (
                     <div
                       key={j}
-                      className="bg-white border rounded-xl p-4 mb-3"
+                      className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl p-4 mb-3"
                     >
                       <input
-                        className="w-full border rounded-xl px-4 py-3 mb-2"
+                        className="w-full border rounded-xl px-4 py-3 mb-2 bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                         value={opt.text}
                         placeholder="Opción"
                         onChange={(e) =>
@@ -729,7 +735,7 @@ export default function ElectionsPanel({ token }) {
 
                       <textarea
                         rows="2"
-                        className="w-full border rounded-xl px-4 py-3 mb-2"
+                        className="w-full border rounded-xl px-4 py-3 mb-2 bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                         value={opt.description}
                         placeholder="Descripción"
                         onChange={(e) =>
@@ -824,7 +830,7 @@ export default function ElectionsPanel({ token }) {
         )}
       </div>
             {/* TABLE */}
-      <div className="bg-white rounded-3xl shadow-xl border overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border dark:border-slate-800 overflow-hidden">
         <div className="p-5 border-b">
           <h3 className="text-xl font-bold">
             Elecciones Registradas
@@ -833,7 +839,7 @@ export default function ElectionsPanel({ token }) {
 
         <div className="overflow-auto">
           <table className="w-full min-w-[900px]">
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-50 dark:bg-slate-800">
               <tr>
                 <th className="p-4 text-left">ID</th>
                 <th className="p-4 text-left">Título</th>
@@ -847,17 +853,17 @@ export default function ElectionsPanel({ token }) {
               {elections.map((e) => (
                 <tr
                   key={e.pollId}
-                  className="border-t hover:bg-slate-50"
+                  className="border-t dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                 >
-                  <td className="p-4 font-mono text-sm">
+                  <td className="p-4 font-mono text-sm text-slate-700 dark:text-slate-300">
                     {e.pollId}
                   </td>
 
-                  <td className="p-4 font-semibold">
+                  <td className="p-4 font-semibold text-slate-900 dark:text-white">
                     {e.title}
                   </td>
 
-                  <td className="p-4 capitalize">
+                  <td className="p-4 capitalize text-slate-700 dark:text-slate-300">
                     {e.type || "simple"}
                   </td>
 
@@ -865,8 +871,8 @@ export default function ElectionsPanel({ token }) {
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold ${
                         e.status === "open"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
+                          ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300"
+                          : "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                       }`}
                     >
                       {e.status === "open"
@@ -918,7 +924,7 @@ export default function ElectionsPanel({ token }) {
                 <tr>
                   <td
                     colSpan="5"
-                    className="p-8 text-center text-gray-500"
+                    className="p-8 text-center text-gray-500 dark:text-slate-400"
                   >
                     No hay elecciones registradas.
                   </td>
@@ -932,14 +938,14 @@ export default function ElectionsPanel({ token }) {
       {/* MODAL EDIT */}
       {editing && (
         <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-start p-4 overflow-auto">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-6 my-8">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl p-6 my-8 border dark:border-slate-800">
 
-            <h2 className="text-2xl font-bold mb-5">
+            <h2 className="text-2xl font-bold mb-5 text-slate-900 dark:text-white">
               Editar elección
             </h2>
 
             <input
-              className="w-full border rounded-xl px-4 py-3 mb-4"
+              className="w-full border rounded-xl px-4 py-3 mb-4 bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               value={editTitle}
               onChange={(e) =>
                 setEditTitle(e.target.value)
@@ -952,7 +958,7 @@ export default function ElectionsPanel({ token }) {
                 {editOptions.map((opt, i) => (
                   <div
                     key={i}
-                    className="bg-slate-50 border rounded-2xl p-4"
+                    className="bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4"
                   >
                     <input
                       className="w-full border rounded-xl px-4 py-3 mb-3"
@@ -1040,10 +1046,10 @@ export default function ElectionsPanel({ token }) {
                     {sec.options.map((opt, j) => (
                       <div
                         key={j}
-                        className="bg-white border rounded-xl p-4 mb-3"
+                        className="bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl p-4 mb-3"
                       >
                         <input
-                          className="w-full border rounded-xl px-4 py-3 mb-2"
+                          className="w-full border rounded-xl px-4 py-3 mb-2 bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                           value={opt.text}
                           placeholder="Opción"
                           onChange={(e) =>
@@ -1143,7 +1149,7 @@ export default function ElectionsPanel({ token }) {
                 onClick={() =>
                   setEditing(null)
                 }
-                className="px-4 py-2 border rounded-xl"
+                className="px-4 py-2 border rounded-xl dark:border-slate-700 dark:text-slate-200"
               >
                 Cancelar
               </button>
@@ -1163,7 +1169,7 @@ export default function ElectionsPanel({ token }) {
       {/* MODAL OPEN */}
       {confirmOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full p-6 border dark:border-slate-800">
 
             <div className="text-center">
               <div className="text-5xl mb-3">
@@ -1174,7 +1180,7 @@ export default function ElectionsPanel({ token }) {
                 Ya existe una elección activa
               </h3>
 
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-gray-600 dark:text-slate-400">
                 <strong>
                   {confirmOpen.current.title}
                 </strong>
