@@ -1,20 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 export default function StudentVerify({ onVerified }) {
-  const navigate = useNavigate();
-
   const [account, setAccount] = useState("");
   const [center, setCenter] = useState("");
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const [activePollId, setActivePollId] = useState(null);
 
-  // ========================================================
-  // CARGAR ELECCIÓN ACTIVA
-  // ========================================================
   useEffect(() => {
     async function load() {
       try {
@@ -28,9 +21,6 @@ export default function StudentVerify({ onVerified }) {
     load();
   }, []);
 
-  // ========================================================
-  // VERIFICAR ESTUDIANTE
-  // ========================================================
   async function handleVerify(e) {
     e.preventDefault();
     setMessage(null);
@@ -43,7 +33,6 @@ export default function StudentVerify({ onVerified }) {
       );
 
       const studentData = res.data;
-
       setLoading(false);
 
       if (!activePollId) {
@@ -67,9 +56,7 @@ export default function StudentVerify({ onVerified }) {
           });
           return;
         }
-      } catch (err) {
-        console.log(err);
-      }
+      } catch {}
 
       setMessage({
         type: "success",
@@ -81,55 +68,55 @@ export default function StudentVerify({ onVerified }) {
     } catch (err) {
       setLoading(false);
 
-      const text =
-        err.response?.data?.message ||
-        "Error de conexión.";
-
       setMessage({
         type: "error",
-        text
+        text:
+          err.response?.data?.message ||
+          "Error de conexión."
       });
     }
   }
 
-  // ========================================================
-  // RENDER
-  // ========================================================
   return (
-    <div className="card">
-      <h2 className="text-2xl font-semibold mb-4">
-        Verificación de Estudiante
-      </h2>
+    <div className="bg-white rounded-3xl shadow-xl border p-6 md:p-8">
+
+      <div className="mb-6">
+        <h2 className="text-3xl font-bold text-slate-900">
+          Verificación de Estudiante
+        </h2>
+
+        <p className="text-slate-500 mt-2">
+          Ingresa tus datos para continuar al proceso de votación.
+        </p>
+      </div>
 
       <form
         onSubmit={handleVerify}
-        className="space-y-4"
+        className="space-y-5"
       >
-        {/* CUENTA */}
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label className="block text-sm font-semibold mb-2 text-slate-700">
             Número de cuenta
           </label>
 
           <input
             value={account}
             onChange={(e) => setAccount(e.target.value)}
-            className="w-full border rounded-lg p-2"
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none"
             placeholder="Ej. 20190000111"
             required
           />
         </div>
 
-        {/* CENTRO */}
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label className="block text-sm font-semibold mb-2 text-slate-700">
             Centro
           </label>
 
           <select
             value={center}
             onChange={(e) => setCenter(e.target.value)}
-            className="w-full border rounded-lg p-2"
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none"
             required
           >
             <option value="">-- Selecciona --</option>
@@ -140,11 +127,11 @@ export default function StudentVerify({ onVerified }) {
           </select>
         </div>
 
-        {/* BOTONES */}
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 pt-2">
+
           <button
             disabled={loading}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+            className="px-5 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition"
           >
             {loading ? "Verificando..." : "Verificar"}
           </button>
@@ -156,33 +143,25 @@ export default function StudentVerify({ onVerified }) {
               setCenter("");
               setMessage(null);
             }}
-            className="px-4 py-2 border rounded-lg"
+            className="px-5 py-3 border rounded-xl font-semibold hover:bg-slate-50 transition"
           >
             Limpiar
           </button>
 
-          {/* 🔥 NUEVO */}
-          <button
-            type="button"
-            onClick={() => navigate("/resultados")}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg"
-          >
-            Ver Resultados Públicos
-          </button>
         </div>
 
-        {/* MENSAJES */}
         {message && (
           <div
-            className={
+            className={`rounded-xl px-4 py-3 text-sm font-medium ${
               message.type === "error"
-                ? "text-red-600"
-                : "text-green-600"
-            }
+                ? "bg-red-50 text-red-700 border border-red-200"
+                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+            }`}
           >
             {message.text}
           </div>
         )}
+
       </form>
     </div>
   );
