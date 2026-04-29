@@ -5,8 +5,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 /* ==========================================================
-   ACCESO ADMIN OCULTO POR CLICKS
-   5 clicks sobre el título principal
+   ACCESO ADMIN OCULTO - 5 CLICKS
 ========================================================== */
 function SecretAdminTrigger({ onUnlock }) {
   const [clicks, setClicks] = useState(0);
@@ -26,15 +25,12 @@ function SecretAdminTrigger({ onUnlock }) {
   }
 
   return (
-    <button
-      onClick={handleClick}
-      className="text-left"
-    >
-      <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900">
+    <button onClick={handleClick} className="text-left">
+      <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white drop-shadow-lg">
         Sistema de Votaciones
       </h1>
 
-      <p className="text-lg text-slate-600 mt-2">
+      <p className="text-lg text-indigo-100 mt-2">
         Universidad Nacional Autónoma de Honduras
       </p>
     </button>
@@ -72,40 +68,43 @@ export default function Home({ onVerified, onAdminLogin }) {
     <div className="space-y-8">
 
       {/* HERO */}
-      <section className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-purple-700 rounded-3xl shadow-2xl text-white p-8 md:p-12">
+      <section className="rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-r from-slate-900 via-indigo-800 to-purple-700 text-white p-8 md:p-12">
+
         <div className="grid lg:grid-cols-2 gap-8 items-center">
 
+          {/* LEFT */}
           <div>
             <SecretAdminTrigger
               onUnlock={() => setShowAdmin(true)}
             />
 
-            <p className="mt-5 text-indigo-100 max-w-xl">
+            <p className="mt-5 text-slate-200 text-lg max-w-xl leading-relaxed">
               Plataforma oficial para procesos electorales
-              estudiantiles. Verifica tu cuenta y participa
-              de forma segura, rápida y transparente.
+              estudiantiles. Participa de forma segura,
+              rápida y transparente.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
 
               <button
                 onClick={() => navigate("/resultados")}
-                className="px-5 py-3 bg-white text-indigo-700 rounded-xl font-semibold shadow-lg hover:scale-105 transition"
+                className="px-6 py-3 bg-white text-indigo-700 rounded-xl font-semibold shadow-lg hover:scale-105 transition"
               >
                 📊 Ver Resultados Públicos
               </button>
 
-              <div className="px-5 py-3 bg-white/10 border border-white/20 rounded-xl">
+              <div className="px-5 py-3 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm">
                 🔒 Voto seguro
               </div>
 
             </div>
           </div>
 
+          {/* RIGHT STATS */}
           <div className="grid grid-cols-2 gap-4">
 
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm">
-              <div className="text-sm text-indigo-100">
+            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
+              <div className="text-sm text-slate-200">
                 Proceso
               </div>
               <div className="text-2xl font-bold mt-1">
@@ -113,8 +112,8 @@ export default function Home({ onVerified, onAdminLogin }) {
               </div>
             </div>
 
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm">
-              <div className="text-sm text-indigo-100">
+            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
+              <div className="text-sm text-slate-200">
                 Acceso
               </div>
               <div className="text-2xl font-bold mt-1">
@@ -122,8 +121,8 @@ export default function Home({ onVerified, onAdminLogin }) {
               </div>
             </div>
 
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm">
-              <div className="text-sm text-indigo-100">
+            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
+              <div className="text-sm text-slate-200">
                 Seguridad
               </div>
               <div className="text-2xl font-bold mt-1">
@@ -131,8 +130,8 @@ export default function Home({ onVerified, onAdminLogin }) {
               </div>
             </div>
 
-            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm">
-              <div className="text-sm text-indigo-100">
+            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10">
+              <div className="text-sm text-slate-200">
                 Resultados
               </div>
               <div className="text-2xl font-bold mt-1">
@@ -143,12 +142,13 @@ export default function Home({ onVerified, onAdminLogin }) {
           </div>
 
         </div>
+
       </section>
 
       {/* CONTENIDO */}
       <section className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
 
-        {/* FORMULARIO */}
+        {/* VERIFICACIÓN */}
         <div>
           <StudentVerify
             onVerified={handleStudentVerified}
@@ -158,31 +158,76 @@ export default function Home({ onVerified, onAdminLogin }) {
         {/* PANEL LATERAL */}
         <div className="space-y-6">
 
+          {/* INSTRUCCIONES */}
           <div className="bg-white rounded-3xl shadow-lg border p-6">
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">
-              Información
+
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">
+              Instrucciones rápidas
             </h2>
 
-            <p className="text-slate-600 leading-relaxed">
-              Los estudiantes pueden verificar su cuenta
-              institucional para participar en elecciones
-              activas. El proceso es rápido y confidencial.
-            </p>
+            <div className="space-y-4">
+
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">
+                  1
+                </div>
+                <div>
+                  <div className="font-semibold">
+                    Ingresa tu cuenta
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    Escribe tu número de cuenta institucional.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">
+                  2
+                </div>
+                <div>
+                  <div className="font-semibold">
+                    Selecciona tu centro
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    Elige VS, CU, Danlí u otro.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">
+                  3
+                </div>
+                <div>
+                  <div className="font-semibold">
+                    Verifica tus datos
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    El sistema validará tu elegibilidad.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white grid place-items-center font-bold">
+                  4
+                </div>
+                <div>
+                  <div className="font-semibold">
+                    Emite tu voto
+                  </div>
+                  <div className="text-sm text-slate-500">
+                    Participa de manera segura y confidencial.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
-          <div className="bg-white rounded-3xl shadow-lg border p-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">
-              Acceso rápido
-            </h2>
-
-            <button
-              onClick={() => navigate("/resultados")}
-              className="w-full px-4 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition"
-            >
-              Ver Dashboard Público
-            </button>
-          </div>
-
+          {/* LOGIN ADMIN */}
           {showAdmin && (
             <div className="bg-white rounded-3xl shadow-xl border p-6">
               <h2 className="text-xl font-bold mb-4">
