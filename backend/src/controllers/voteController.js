@@ -633,6 +633,100 @@ async function checkVote(
   }
 }
 
+async function getAllResults(req, res) {
+  try {
+    const elections = await Election.findAll({
+      order: [["createdAt", "DESC"]],
+      raw: true
+    });
+
+    const finalResults = [];
+
+    for (const election of elections) {
+      const pollId = election.pollId;
+
+      const votes = await Vote.findAll({
+        where: { pollId },
+        raw: true
+      });
+
+      const totalVotes = votes.length;
+      const type = election.type || "simple";
+
+      // SIMPLE
+      if (type === "simple") {
+        const options = (election.options || []).map((opt) => {
+          const count = votes.filter(
+            (v) => v.option === opt.text
+          ).length;
+
+          return {
+            text: opt.text,
+            imageUrl: opt.imageUrl || null,
+            votes: count
+          };
+        });
+
+        finalResults.push({
+          pollId,
+          title: election.title,
+          type,
+          status: election.status,
+          totalVotes,
+          options
+        });
+      }
+
+      // COMPOUND
+      if (type === "compound") {
+        const sections = (election.sections || []).map((section) => {
+          const options = (section.options || []).map((opt) => {
+            let count = 0;
+
+            votes.forEach((v) => {
+              try {
+                const parsed = JSON.parse(v.option);
+
+                if (parsed[section.title] === opt.text) {
+                  count++;
+                }
+              } catch {}
+            });
+
+            return {
+              text: opt.text,
+              votes: count
+            };
+          });
+
+          return {
+            title: section.title,
+            options
+          };
+        });
+
+        finalResults.push({
+          pollId,
+          title: election.title,
+          type,
+          status: election.status,
+          totalVotes,
+          sections
+        });
+      }
+    }
+
+    return res.json(finalResults);
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Error obteniendo resultados."
+    });
+  }
+}
+
 module.exports = {
   castVote,
   getVotesForAdmin,
@@ -640,5 +734,6 @@ module.exports = {
   exportResultsExcel,
   getDetailedVoteResults,
   getPublicResults,
+  getAllResults,
   checkVote
 };
