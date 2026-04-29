@@ -208,7 +208,7 @@ export default function PublicResults() {
               </button>
 
               <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-                Dashboard Electoral PRO+
+                Dashboard Electoral
               </h1>
 
               <p className={theme.text}>
