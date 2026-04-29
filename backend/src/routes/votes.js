@@ -8,6 +8,7 @@ const {
   exportResultsExcel,
   getDetailedVoteResults,
   getPublicResults,
+  getAllResults,
   checkVote
 } = require("../controllers/voteController");
 
@@ -31,12 +32,12 @@ router.get("/public/results", getPublicResults);
 // ADMIN
 // ============================================================
 
-// 🔥 NUEVO: Resultados generales admin
+// Resultados generales admin
 router.get(
   "/results",
   adminAuth,
   permit("superadmin", "editor"),
-  getPublicResults
+  getAllResults
 );
 
 // Todos los votos
