@@ -2,6 +2,27 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement
+} from "chart.js";
+
+import { Doughnut, Bar } from "react-chartjs-2";
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement
+);
+
 export default function PublicResults() {
   const navigate = useNavigate();
 
@@ -29,7 +50,7 @@ export default function PublicResults() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "No se pudieron cargar resultados."
+          "No se pudieron cargar resultados."
       );
       setData(null);
     } finally {
@@ -69,6 +90,9 @@ export default function PublicResults() {
 
   const leader = ranked[0];
 
+  // ==========================================================
+  // THEME
+  // ==========================================================
   const theme = darkMode
     ? {
         bg: "bg-slate-950 text-white",
@@ -124,10 +148,48 @@ export default function PublicResults() {
   }
 
   // ==========================================================
+  // DATA CHARTS
+  // ==========================================================
+  const voteChartData = {
+    labels: ranked.map((item) => item.text),
+    datasets: [
+      {
+        data: ranked.map((item) => item.votes),
+        backgroundColor: [
+          "#4f46e5",
+          "#06b6d4",
+          "#10b981",
+          "#f59e0b",
+          "#ef4444",
+          "#8b5cf6"
+        ],
+        borderWidth: 2
+      }
+    ]
+  };
+
+  const centerChartData = {
+    labels: Object.keys(data.centerStats || {}),
+    datasets: [
+      {
+        label: "Votos",
+        data: Object.values(data.centerStats || {}),
+        backgroundColor: [
+          "#4f46e5",
+          "#06b6d4",
+          "#10b981",
+          "#f59e0b"
+        ],
+        borderRadius: 8
+      }
+    ]
+  };
+
+  // ==========================================================
   // MAIN
   // ==========================================================
   return (
-    <div className={`min-h-screen p-4 md:p-8 ${theme.bg}`}>
+    <div className={`min-h-screen p-4 md:p-8 transition-all duration-500 ${theme.bg}`}>
 
       <div className="max-w-7xl mx-auto space-y-6">
 
@@ -143,7 +205,7 @@ export default function PublicResults() {
                 ← Volver a verificación
               </button>
 
-              <h1 className="text-4xl font-black">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight">
                 Dashboard Electoral PRO+
               </h1>
 
@@ -246,6 +308,37 @@ export default function PublicResults() {
             })}
           </div>
         )}
+
+        {/* GRAFICAS REALES */}
+        <div className="grid lg:grid-cols-2 gap-6">
+
+          <div className={`rounded-3xl p-6 shadow-xl border ${theme.card}`}>
+            <h3 className="text-xl font-bold mb-4">
+              Distribución de votos
+            </h3>
+
+            <div className="max-w-sm mx-auto">
+              <Doughnut data={voteChartData} />
+            </div>
+          </div>
+
+          <div className={`rounded-3xl p-6 shadow-xl border ${theme.card}`}>
+            <h3 className="text-xl font-bold mb-4">
+              Participación por centro
+            </h3>
+
+            <Bar
+              data={centerChartData}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { display: false }
+                }
+              }}
+            />
+          </div>
+
+        </div>
 
         {/* LÍDER */}
         {leader && (
