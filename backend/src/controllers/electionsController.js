@@ -66,6 +66,29 @@ async function createElection(req, res) {
       sections = JSON.parse(
         req.body.sections || "[]"
       );
+
+      if (req.files && req.files.length > 0) {
+        let fileIndex = 0;
+
+        sections = sections.map((sec) => {
+          sec.options = (sec.options || []).map((opt) => {
+            if (
+              opt.image &&
+              req.files[fileIndex]
+            ) {
+              opt.imageUrl =
+                `/uploads/${req.files[fileIndex].filename}`;
+
+              fileIndex++;
+            }
+
+            delete opt.image;
+            return opt;
+          });
+
+          return sec;
+        });
+      }
     }
 
     if (!title || title.trim() === "") {
@@ -276,6 +299,36 @@ async function editElection(req, res) {
       newSections = JSON.parse(
         req.body.sections || "[]"
       );
+
+      if (
+        req.files &&
+        req.files.length > 0
+      ) {
+        let fileIndex = 0;
+
+        newSections = newSections.map(
+          (sec) => {
+            sec.options = (sec.options || []).map(
+              (opt) => {
+                if (
+                  opt.newImage &&
+                  req.files[fileIndex]
+                ) {
+                  opt.imageUrl =
+                    `/uploads/${req.files[fileIndex].filename}`;
+
+                  fileIndex++;
+                }
+
+                delete opt.newImage;
+                return opt;
+              }
+            );
+
+            return sec;
+          }
+        );
+      }
     }
 
     // ======================================

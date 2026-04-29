@@ -527,9 +527,19 @@ export default function PublicResults() {
                               className={`rounded-2xl border p-4 ${theme.soft}`}
                             >
                               <div className="flex justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  {opt.imageUrl && (
+                                    <img
+                                      src={`${API_BASE}${opt.imageUrl}`}
+                                      alt={opt.text}
+                                      className="w-14 h-14 rounded-xl object-cover border"
+                                    />
+                                  )}
+
                                 <div className="font-semibold">
                                   {opt.text}
                                 </div>
+                              </div>
 
                                 <div className="text-right">
                                   <div className="font-black text-indigo-500">

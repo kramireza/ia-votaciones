@@ -569,10 +569,15 @@ export default function VotingPage({
 
                               {opt.description && (
                                 <div className="text-sm text-slate-500">
-                                  {
-                                    opt.description
-                                  }
+                                  {opt.description}
                                 </div>
+                              )}
+
+                              {opt.imageUrl && (
+                                <img
+                                  src={`${API_BASE}${opt.imageUrl}`}
+                                  className="w-full max-w-[160px] h-auto rounded-lg border object-cover mt-3"
+                                />
                               )}
                             </div>
                           </label>

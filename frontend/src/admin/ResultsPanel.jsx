@@ -24,6 +24,10 @@ export default function ResultsPanel({ token }) {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
+  const API_BASE =
+    import.meta.env.VITE_API_URL?.replace("/api", "") ||
+    "http://localhost:4001";
+
   // =====================================================
   // LOAD
   // =====================================================
@@ -163,7 +167,10 @@ export default function ResultsPanel({ token }) {
           data:
             selected.options?.map(
               (o) => o.votes
-            ) || []
+            ) || [],
+          backgroundColor:
+            "#4f46e5",
+          borderRadius: 8
         }
       ]
     };
@@ -379,12 +386,26 @@ export default function ResultsPanel({ token }) {
                             key={i}
                             className="border-t"
                           >
-                            <td className="p-4 font-semibold">
-                              {opt.text}
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                {opt.imageUrl && (
+                                  <img
+                                    src={`${API_BASE}${opt.imageUrl}`}
+                                    alt={opt.text}
+                                    className="w-14 h-14 rounded-xl object-cover border"
+                                  />
+                                )}
+
+                                <div className="font-semibold">
+                                  {opt.text}
+                                </div>
+                              </div>
                             </td>
+
                             <td className="p-4">
                               {opt.votes}
                             </td>
+
                             <td className="p-4">
                               {percent(
                                 opt.votes,
@@ -392,6 +413,7 @@ export default function ResultsPanel({ token }) {
                               )}
                               %
                             </td>
+
                             <td className="p-4 w-[320px]">
                               <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
                                 <div
@@ -459,7 +481,10 @@ export default function ResultsPanel({ token }) {
                               o
                             ) =>
                               o.votes
-                          ) || []
+                          ) || [],
+                        backgroundColor:
+                          "#4f46e5",
+                        borderRadius: 8
                       }
                     ]
                   };
@@ -541,16 +566,30 @@ export default function ResultsPanel({ token }) {
                                   }
                                   className="border-t"
                                 >
-                                  <td className="p-4 font-semibold">
-                                    {
-                                      opt.text
-                                    }
+                                  <td className="p-4">
+                                    <div className="flex items-center gap-3">
+                                      {opt.imageUrl && (
+                                        <img
+                                          src={`${API_BASE}${opt.imageUrl}`}
+                                          alt={opt.text}
+                                          className="w-14 h-14 rounded-xl object-cover border"
+                                        />
+                                      )}
+
+                                      <div className="font-semibold">
+                                        {
+                                          opt.text
+                                        }
+                                      </div>
+                                    </div>
                                   </td>
+
                                   <td className="p-4">
                                     {
                                       opt.votes
                                     }
                                   </td>
+
                                   <td className="p-4">
                                     {percent(
                                       opt.votes,
@@ -558,6 +597,7 @@ export default function ResultsPanel({ token }) {
                                     )}
                                     %
                                   </td>
+
                                   <td className="p-4 w-[320px]">
                                     <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
                                       <div

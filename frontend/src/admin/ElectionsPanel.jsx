@@ -21,7 +21,13 @@ export default function ElectionsPanel({ token }) {
   const [sections, setSections] = useState([
     {
       title: "",
-      options: [{ text: "", description: "" }]
+      options: [
+        {
+          text: "",
+          description: "",
+          image: null
+        }
+      ]
     }
   ]);
 
@@ -82,7 +88,13 @@ export default function ElectionsPanel({ token }) {
       ...sections,
       {
         title: "",
-        options: [{ text: "", description: "" }]
+        options: [
+          {
+            text: "",
+            description: "",
+            image: null
+          }
+        ]
       }
     ]);
   }
@@ -101,7 +113,8 @@ export default function ElectionsPanel({ token }) {
     const copy = [...sections];
     copy[i].options.push({
       text: "",
-      description: ""
+      description: "",
+      image: null
     });
     setSections(copy);
   }
@@ -114,11 +127,9 @@ export default function ElectionsPanel({ token }) {
 
   function removeSectionOption(i, j) {
     const copy = [...sections];
-
     copy[i].options = copy[i].options.filter(
       (_, idx) => idx !== j
     );
-
     setSections(copy);
   }
 
@@ -152,10 +163,27 @@ export default function ElectionsPanel({ token }) {
     }
 
     if (type === "compound") {
+      const formattedSections = sections.map((sec) => ({
+        title: sec.title,
+        options: sec.options.map((opt) => ({
+          text: opt.text,
+          description: opt.description?.trim() || null,
+          image: opt.image ? opt.image.name : null
+        }))
+      }));
+
       formData.append(
         "sections",
-        JSON.stringify(sections)
+        JSON.stringify(formattedSections)
       );
+
+      sections.forEach((sec) => {
+        sec.options.forEach((opt) => {
+          if (opt.image) {
+            formData.append("images", opt.image);
+          }
+        });
+      });
     }
 
     try {
@@ -176,7 +204,13 @@ export default function ElectionsPanel({ token }) {
       setSections([
         {
           title: "",
-          options: [{ text: "", description: "" }]
+          options: [
+            {
+              text: "",
+              description: "",
+              image: null
+            }
+          ]
         }
       ]);
 
@@ -191,8 +225,7 @@ export default function ElectionsPanel({ token }) {
       });
     }
   }
-
-  // =====================================================
+    // =====================================================
   // STATUS
   // =====================================================
   async function toggleStatus(election) {
@@ -316,7 +349,15 @@ export default function ElectionsPanel({ token }) {
       );
     } else {
       setEditSections(
-        election.sections || []
+        (election.sections || []).map((sec) => ({
+          title: sec.title,
+          options: (sec.options || []).map((opt) => ({
+            text: opt.text || "",
+            description: opt.description || "",
+            imageUrl: opt.imageUrl || null,
+            newImage: null
+          }))
+        }))
       );
     }
   }
@@ -344,9 +385,7 @@ export default function ElectionsPanel({ token }) {
 
   function removeEditOption(i) {
     setEditOptions(
-      editOptions.filter(
-        (_, idx) => idx !== i
-      )
+      editOptions.filter((_, idx) => idx !== i)
     );
   }
 
@@ -358,16 +397,21 @@ export default function ElectionsPanel({ token }) {
       ...editSections,
       {
         title: "",
-        options: [{ text: "", description: "" }]
+        options: [
+          {
+            text: "",
+            description: "",
+            imageUrl: null,
+            newImage: null
+          }
+        ]
       }
     ]);
   }
 
   function removeEditSection(i) {
     setEditSections(
-      editSections.filter(
-        (_, idx) => idx !== i
-      )
+      editSections.filter((_, idx) => idx !== i)
     );
   }
 
@@ -379,10 +423,14 @@ export default function ElectionsPanel({ token }) {
 
   function addEditSectionOption(i) {
     const copy = [...editSections];
+
     copy[i].options.push({
       text: "",
-      description: ""
+      description: "",
+      imageUrl: null,
+      newImage: null
     });
+
     setEditSections(copy);
   }
 
@@ -429,19 +477,42 @@ export default function ElectionsPanel({ token }) {
 
       editOptions.forEach((o) => {
         if (o.newImage) {
-          formData.append(
-            "images",
-            o.newImage
-          );
+          formData.append("images", o.newImage);
         }
       });
     }
 
     if (editType === "compound") {
+      const formattedSections =
+        editSections.map((sec) => ({
+          title: sec.title,
+          options: sec.options.map((opt) => ({
+            text: opt.text,
+            description:
+              opt.description?.trim() || null,
+            imageUrl:
+              opt.imageUrl || null,
+            newImage: opt.newImage
+              ? opt.newImage.name
+              : null
+          }))
+        }));
+
       formData.append(
         "sections",
-        JSON.stringify(editSections)
+        JSON.stringify(formattedSections)
       );
+
+      editSections.forEach((sec) => {
+        sec.options.forEach((opt) => {
+          if (opt.newImage) {
+            formData.append(
+              "images",
+              opt.newImage
+            );
+          }
+        });
+      });
     }
 
     try {
@@ -474,6 +545,7 @@ export default function ElectionsPanel({ token }) {
   // STATS
   // =====================================================
   const total = elections.length;
+
   const active = elections.filter(
     (e) => e.status === "open"
   ).length;
@@ -481,8 +553,7 @@ export default function ElectionsPanel({ token }) {
   const closed = elections.filter(
     (e) => e.status === "closed"
   ).length;
-
-  return (
+    return (
     <div className="space-y-8">
 
       {/* HEADER */}
@@ -499,30 +570,18 @@ export default function ElectionsPanel({ token }) {
       {/* STATS */}
       <div className="grid md:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl shadow border p-5">
-          <div className="text-sm text-gray-500">
-            Total
-          </div>
-          <div className="text-3xl font-black">
-            {total}
-          </div>
+          <div className="text-sm text-gray-500">Total</div>
+          <div className="text-3xl font-black">{total}</div>
         </div>
 
         <div className="bg-white rounded-2xl shadow border p-5">
-          <div className="text-sm text-gray-500">
-            Activas
-          </div>
-          <div className="text-3xl font-black text-green-600">
-            {active}
-          </div>
+          <div className="text-sm text-gray-500">Activas</div>
+          <div className="text-3xl font-black text-green-600">{active}</div>
         </div>
 
         <div className="bg-white rounded-2xl shadow border p-5">
-          <div className="text-sm text-gray-500">
-            Cerradas
-          </div>
-          <div className="text-3xl font-black text-red-600">
-            {closed}
-          </div>
+          <div className="text-sm text-gray-500">Cerradas</div>
+          <div className="text-3xl font-black text-red-600">{closed}</div>
         </div>
       </div>
 
@@ -538,9 +597,7 @@ export default function ElectionsPanel({ token }) {
         >
           <input
             value={title}
-            onChange={(e) =>
-              setTitle(e.target.value)
-            }
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Título general"
             className="w-full border rounded-xl px-4 py-3"
             required
@@ -548,9 +605,7 @@ export default function ElectionsPanel({ token }) {
 
           <select
             value={type}
-            onChange={(e) =>
-              setType(e.target.value)
-            }
+            onChange={(e) => setType(e.target.value)}
             className="w-full border rounded-xl px-4 py-3"
           >
             <option value="simple">
@@ -674,7 +729,7 @@ export default function ElectionsPanel({ token }) {
 
                       <textarea
                         rows="2"
-                        className="w-full border rounded-xl px-4 py-3"
+                        className="w-full border rounded-xl px-4 py-3 mb-2"
                         value={opt.description}
                         placeholder="Descripción"
                         onChange={(e) =>
@@ -683,6 +738,20 @@ export default function ElectionsPanel({ token }) {
                             j,
                             "description",
                             e.target.value
+                          )
+                        }
+                      />
+
+                      {/* NUEVO */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          updateSectionOption(
+                            i,
+                            j,
+                            "image",
+                            e.target.files[0]
                           )
                         }
                       />
@@ -754,8 +823,7 @@ export default function ElectionsPanel({ token }) {
           </div>
         )}
       </div>
-
-      {/* TABLE */}
+            {/* TABLE */}
       <div className="bg-white rounded-3xl shadow-xl border overflow-hidden">
         <div className="p-5 border-b">
           <h3 className="text-xl font-bold">
@@ -768,18 +836,10 @@ export default function ElectionsPanel({ token }) {
             <thead className="bg-slate-50">
               <tr>
                 <th className="p-4 text-left">ID</th>
-                <th className="p-4 text-left">
-                  Título
-                </th>
-                <th className="p-4 text-left">
-                  Tipo
-                </th>
-                <th className="p-4 text-left">
-                  Estado
-                </th>
-                <th className="p-4 text-left">
-                  Acciones
-                </th>
+                <th className="p-4 text-left">Título</th>
+                <th className="p-4 text-left">Tipo</th>
+                <th className="p-4 text-left">Estado</th>
+                <th className="p-4 text-left">Acciones</th>
               </tr>
             </thead>
 
@@ -998,7 +1058,7 @@ export default function ElectionsPanel({ token }) {
 
                         <textarea
                           rows="2"
-                          className="w-full border rounded-xl px-4 py-3"
+                          className="w-full border rounded-xl px-4 py-3 mb-2"
                           value={opt.description}
                           placeholder="Descripción"
                           onChange={(e) =>
@@ -1007,6 +1067,20 @@ export default function ElectionsPanel({ token }) {
                               j,
                               "description",
                               e.target.value
+                            )
+                          }
+                        />
+
+                        {/* NUEVO */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            updateEditSectionOption(
+                              i,
+                              j,
+                              "newImage",
+                              e.target.files[0]
                             )
                           }
                         />
