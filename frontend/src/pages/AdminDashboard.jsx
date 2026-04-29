@@ -1,9 +1,8 @@
-// src/pages/AdminDashboard.jsx
 import React, { useState, Suspense, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getRoleFromToken } from "../services/auth";
 
-// ⬇️ Panels con lazy load (sin cambios en nombres)
+// Panels
 const ElectionsPanel = React.lazy(() => import("../admin/ElectionsPanel"));
 const VotesPanel = React.lazy(() => import("../admin/VotesPanel"));
 const StudentsPanel = React.lazy(() => import("../admin/StudentsPanel"));
@@ -13,112 +12,182 @@ const AdminLogsPanel = React.lazy(() => import("../admin/AdminLogPanel.jsx"));
 const AdminRequestsPanel = React.lazy(() => import("../admin/AdminRequestsPanel.jsx"));
 
 export default function AdminDashboard({ token, onLogout }) {
-  // tab por defecto
   const [tab, setTab] = useState("elections");
-  const navigate = useNavigate();
+  const [mobileMenu, setMobileMenu] = useState(false);
 
-  // Determinar rol desde el token
+  const navigate = useNavigate();
   const role = getRoleFromToken(token);
 
-  // Pestañas permitidas para el rol 'editor' (ahora incluye 'requests')
-  const editorAllowedTabs = ["elections", "students", "results", "requests"];
+  const editorAllowedTabs = [
+    "elections",
+    "students",
+    "results",
+    "requests"
+  ];
 
-  // Si el rol es 'editor' y la tab actual NO está permitida, forzar a la primera permitida.
   useEffect(() => {
     if (role === "editor" && !editorAllowedTabs.includes(tab)) {
       setTab("elections");
     }
-    // Si no hay token o rol desconocido, redirigir a login (no rompemos flujo actual)
+
     if (!token) {
       navigate("/admin/login");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, token]);
+  }, [role, token, tab, navigate]);
 
   function logout() {
     onLogout();
     navigate("/admin/login");
   }
 
-  // Helper para saber si debe renderizar una pestaña en UI
   const canView = (t) => {
-    if (role === "editor") return editorAllowedTabs.includes(t);
-    // superadmin (u otros roles) ven todo
+    if (role === "editor") {
+      return editorAllowedTabs.includes(t);
+    }
     return true;
   };
 
+  const menuButton = (key, label, icon) => {
+    const active = tab === key;
+
+    return (
+      <button
+        key={key}
+        onClick={() => {
+          setTab(key);
+          setMobileMenu(false);
+        }}
+        className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3
+        ${
+          active
+            ? "bg-white text-indigo-700 shadow-lg font-semibold"
+            : "text-white hover:bg-indigo-600"
+        }`}
+      >
+        <span>{icon}</span>
+        <span>{label}</span>
+      </button>
+    );
+  };
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* SIDEBAR */}
-      <div className="w-72 bg-indigo-700 text-white p-6 space-y-5 shadow-lg">
-        <h2 className="text-2xl font-bold mb-6">Panel Admin</h2>
+    <div className="w-full min-h-full">
 
-        {canView("elections") && (
-          <button onClick={() => setTab("elections")} className="w-full text-left hover:underline">
-            🗳 Elecciones
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+
+        {/* MOBILE TOP BAR */}
+        <div className="lg:hidden">
+          <button
+            onClick={() => setMobileMenu(!mobileMenu)}
+            className="w-full bg-indigo-700 text-white px-4 py-3 rounded-2xl shadow-lg"
+          >
+            ☰ Menú Admin
           </button>
-        )}
+        </div>
 
-        {/* Votos: lo dejamos visible sólo para superadmin (o quienes no sean 'editor') */}
-        {canView("votes") && (
-          <button onClick={() => setTab("votes")} className="w-full text-left hover:underline">
-            📊 Votos
-          </button>
-        )}
-
-        {canView("students") && (
-          <button onClick={() => setTab("students")} className="w-full text-left hover:underline">
-            🧑‍🎓 Estudiantes
-          </button>
-        )}
-
-        {canView("results") && (
-          <button onClick={() => setTab("results")} className="w-full text-left hover:underline">
-            📈 Resultados
-          </button>
-        )}
-
-        {/* Solicitudes: ahora controlado por canView, por lo que editors también la verán */}
-        {canView("requests") && (
-          <button onClick={() => setTab("requests")} className="w-full text-left hover:underline">
-            📬 Solicitudes
-          </button>
-        )}
-
-        {/* Administradores y logs: sólo para superadmin (no se muestran a editor) */}
-        {canView("admins") && (
-          <button onClick={() => setTab("admins")} className="w-full text-left hover:underline">
-            👤 Administradores
-          </button>
-        )}
-
-        {canView("logs") && (
-          <button onClick={() => setTab("logs")} className="w-full text-left hover:underline">
-            📝 Logs de actividad
-          </button>
-        )}
-
-        <button
-          onClick={logout}
-          className="bg-red-600 px-3 py-2 rounded-lg mt-10 shadow"
+        {/* SIDEBAR */}
+        <aside
+          className={`
+            ${mobileMenu ? "block" : "hidden"}
+            lg:block
+          `}
         >
-          Cerrar sesión
-        </button>
+          <div className="bg-indigo-700 text-white rounded-3xl shadow-2xl p-5 sticky top-6">
+
+            <div className="mb-6 border-b border-indigo-500 pb-4">
+              <h2 className="text-3xl font-bold">
+                Panel Admin
+              </h2>
+
+              <p className="text-indigo-200 text-sm mt-1">
+                Gestión del sistema
+              </p>
+            </div>
+
+            <div className="space-y-2">
+
+              {canView("elections") &&
+                menuButton("elections", "Elecciones", "🗳")}
+
+              {canView("votes") &&
+                menuButton("votes", "Votos", "📊")}
+
+              {canView("students") &&
+                menuButton("students", "Estudiantes", "🎓")}
+
+              {canView("results") &&
+                menuButton("results", "Resultados", "📈")}
+
+              {canView("requests") &&
+                menuButton("requests", "Solicitudes", "📬")}
+
+              {canView("admins") &&
+                menuButton("admins", "Administradores", "👤")}
+
+              {canView("logs") &&
+                menuButton("logs", "Logs", "📝")}
+
+            </div>
+
+            <div className="mt-8 pt-5 border-t border-indigo-500">
+              <button
+                onClick={logout}
+                className="w-full bg-red-500 hover:bg-red-600 px-4 py-3 rounded-xl shadow-lg font-semibold"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+
+          </div>
+        </aside>
+
+        {/* CONTENIDO */}
+        <section className="min-w-0">
+
+          <div className="bg-white rounded-3xl shadow-xl p-4 md:p-6">
+
+            <Suspense
+              fallback={
+                <div className="py-20 text-center text-gray-500">
+                  Cargando módulo...
+                </div>
+              }
+            >
+              {tab === "elections" &&
+                canView("elections") &&
+                <ElectionsPanel token={token} />}
+
+              {tab === "votes" &&
+                canView("votes") &&
+                <VotesPanel token={token} />}
+
+              {tab === "students" &&
+                canView("students") &&
+                <StudentsPanel token={token} />}
+
+              {tab === "results" &&
+                canView("results") &&
+                <ResultsPanel token={token} />}
+
+              {tab === "requests" &&
+                canView("requests") &&
+                <AdminRequestsPanel token={token} />}
+
+              {tab === "admins" &&
+                canView("admins") &&
+                <AdminUsersPanel token={token} />}
+
+              {tab === "logs" &&
+                canView("logs") &&
+                <AdminLogsPanel token={token} />}
+            </Suspense>
+
+          </div>
+
+        </section>
+
       </div>
 
-      {/* CONTENIDO */}
-      <div className="flex-1 p-8 overflow-auto">
-        <Suspense fallback={<p>Cargando...</p>}>
-          {/* Render condicionado: si el rol no puede ver la pestaña, no la renderizamos */}
-          {tab === "elections" && canView("elections") && <ElectionsPanel token={token} />}
-          {tab === "votes" && canView("votes") && <VotesPanel token={token} />}
-          {tab === "students" && canView("students") && <StudentsPanel token={token} />}
-          {tab === "results" && canView("results") && <ResultsPanel token={token} />}
-          {tab === "requests" && canView("requests") && <AdminRequestsPanel token={token} />}
-          {tab === "admins" && canView("admins") && <AdminUsersPanel token={token} />}
-          {tab === "logs" && canView("logs") && <AdminLogsPanel token={token} />}
-        </Suspense>
-      </div>
     </div>
   );
 }
