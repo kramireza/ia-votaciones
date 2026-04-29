@@ -129,15 +129,6 @@ export default function PublicResults() {
   return (
     <div className={`min-h-screen p-4 md:p-8 ${theme.bg}`}>
 
-      {/* CONFETI */}
-      {leader && leader.votes > 0 && (
-        <div className="pointer-events-none fixed inset-0 opacity-20 overflow-hidden">
-          <div className="absolute top-5 left-10 text-4xl animate-bounce">🎉</div>
-          <div className="absolute top-10 right-10 text-4xl animate-pulse">✨</div>
-          <div className="absolute top-20 left-1/2 text-5xl animate-bounce">🏆</div>
-        </div>
-      )}
-
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* HEADER */}
