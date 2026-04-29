@@ -28,47 +28,70 @@ async function getActiveElection(req, res) {
 // =====================================================
 async function createElection(req, res) {
   try {
-    let { pollId, title } = req.body;
-    let options = JSON.parse(req.body.options || "[]");
+    let { pollId, title, type } = req.body;
 
-    if (!title || !title.trim() === "") {
-      return res.status(400).json({ message: "El título es requerido" });
+    type = type || "simple";
+
+    let options = [];
+    let sections = [];
+
+    // ==========================================
+    // SIMPLE
+    // ==========================================
+    if (type === "simple") {
+      options = JSON.parse(req.body.options || "[]");
+
+      if (req.files && req.files.length > 0) {
+        req.files.forEach((file, index) => {
+          if (options[index]) {
+            options[index].imageUrl = `/uploads/${file.filename}`;
+          }
+        });
+      }
     }
 
-    // ✔ Si NO se envía pollId → lo generamos automáticamente
-    if (!pollId || pollId.trim() === "") {
-      pollId = "poll_" + Date.now();   // Ejemplo: poll_1732399901234
+    // ==========================================
+    // COMPOUND
+    // ==========================================
+    if (type === "compound") {
+      sections = JSON.parse(req.body.sections || "[]");
     }
 
-    // asignar imágenes
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file, index) => {
-        if (options[index]) {
-          options[index].imageUrl = `/uploads/${file.filename}`;
-        }
+    if (!title || title.trim() === "") {
+      return res.status(400).json({
+        message: "El título es requerido",
       });
     }
 
-    // ✔ Crear elección
+    if (!pollId || pollId.trim() === "") {
+      pollId = "poll_" + Date.now();
+    }
+
     const election = await Election.create({
       pollId,
       title,
+      type,
       options,
-      status: "closed"
+      sections,
+      status: "closed",
     });
 
-    // 🔵 LOG: creación de elección
     await logAction(
       req.admin,
       "Crear elección",
-      `Se creó la elección ${pollId} con ${options.length} opciones.`
+      `Se creó la elección ${pollId} (${type}).`
     );
 
-    res.json({ message: "Elección creada correctamente", election });
+    res.json({
+      message: "Elección creada correctamente",
+      election,
+    });
 
   } catch (err) {
     console.error("ERROR CREATE ELECTION:", err);
-    res.status(500).json({ message: "Error creando elección" });
+    res.status(500).json({
+      message: "Error creando elección",
+    });
   }
 }
 
@@ -96,25 +119,62 @@ async function changeElectionStatus(req, res) {
     const { pollId } = req.params;
     const { status } = req.body;
 
-    const election = await Election.findOne({ where: { pollId } });
-    if (!election)
-      return res.status(404).json({ message: "Elección no encontrada" });
+    const election = await Election.findOne({
+      where: { pollId }
+    });
 
+    if (!election) {
+      return res.status(404).json({
+        message: "Elección no encontrada"
+      });
+    }
+
+    // =====================================================
+    // SI QUIEREN ABRIR UNA ELECCIÓN:
+    // cerrar cualquier otra abierta primero
+    // =====================================================
+    if (status === "open") {
+      await Election.update(
+        { status: "closed" },
+        {
+          where: {
+            status: "open"
+          }
+        }
+      );
+    }
+
+    // Abrir/Cerrar la seleccionada
     election.status = status;
     await election.save();
 
-    // 🔵 LOG: estado cambiado
-    await logAction(
-      req.admin,
-      "Cambiar estado de elección",
-      `La elección ${pollId} ahora está ${status}.`
-    );
+    // =====================================================
+    // LOGS
+    // =====================================================
+    if (status === "open") {
+      await logAction(
+        req.admin,
+        "Activar elección",
+        `Se activó ${pollId} y se cerraron otras elecciones abiertas.`
+      );
+    } else {
+      await logAction(
+        req.admin,
+        "Cerrar elección",
+        `Se cerró la elección ${pollId}.`
+      );
+    }
 
-    res.json({ message: "Estado actualizado" });
+    return res.json({
+      message: "Estado actualizado correctamente"
+    });
 
   } catch (err) {
     console.error("ERROR CHANGE STATUS:", err);
-    res.status(500).json({ message: "Error cambiando estado" });
+
+    return res.status(500).json({
+      message: "Error cambiando estado"
+    });
   }
 }
 

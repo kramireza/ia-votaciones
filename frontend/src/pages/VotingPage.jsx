@@ -6,7 +6,13 @@ export default function VotingPage({ student, onVoted }) {
   const navigate = useNavigate();
 
   const [poll, setPoll] = useState(null);
+
+  // SIMPLE
   const [selected, setSelected] = useState("");
+
+  // COMPOUND
+  const [answers, setAnswers] = useState({});
+
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -18,9 +24,9 @@ export default function VotingPage({ student, onVoted }) {
     ? `voted_${poll.pollId}_${student.accountNumber}`
     : null;
 
-  // ==========================================================
-  // CARGAR ELECCIÓN
-  // ==========================================================
+  // =====================================================
+  // LOAD POLL
+  // =====================================================
   useEffect(() => {
     async function loadPoll() {
       try {
@@ -37,9 +43,9 @@ export default function VotingPage({ student, onVoted }) {
     loadPoll();
   }, []);
 
-  // ==========================================================
-  // VALIDAR BACKEND
-  // ==========================================================
+  // =====================================================
+  // CHECK BACKEND
+  // =====================================================
   useEffect(() => {
     async function validateVote() {
       if (!student || !poll) return;
@@ -66,9 +72,9 @@ export default function VotingPage({ student, onVoted }) {
     validateVote();
   }, [poll, student]);
 
-  // ==========================================================
-  // VALIDAR LOCAL
-  // ==========================================================
+  // =====================================================
+  // CHECK LOCAL
+  // =====================================================
   useEffect(() => {
     if (!voteKey || !backendChecked) return;
 
@@ -82,9 +88,9 @@ export default function VotingPage({ student, onVoted }) {
     }
   }, [voteKey, backendChecked]);
 
-  // ==========================================================
-  // CONTADOR + REDIRECT
-  // ==========================================================
+  // =====================================================
+  // REDIRECT
+  // =====================================================
   useEffect(() => {
     if (status?.type === "success") {
       setCountdown(5);
@@ -93,10 +99,8 @@ export default function VotingPage({ student, onVoted }) {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-
             onVoted?.();
             navigate("/resultados");
-
             return 0;
           }
 
@@ -108,19 +112,38 @@ export default function VotingPage({ student, onVoted }) {
     }
   }, [status]);
 
-  // ==========================================================
-  // ABRIR CONFIRMACIÓN
-  // ==========================================================
+  // =====================================================
+  // VALIDATE BEFORE MODAL
+  // =====================================================
   function submitVote(e) {
     e.preventDefault();
     setStatus(null);
 
-    if (!selected) {
-      setStatus({
-        type: "error",
-        text: "Selecciona una opción antes de votar."
-      });
-      return;
+    const type = poll?.type || "simple";
+
+    if (type === "simple") {
+      if (!selected) {
+        setStatus({
+          type: "error",
+          text: "Selecciona una opción antes de votar."
+        });
+        return;
+      }
+    }
+
+    if (type === "compound") {
+      const sections = poll.sections || [];
+
+      for (const sec of sections) {
+        if (!answers[sec.title]) {
+          setStatus({
+            type: "error",
+            text:
+              "Debes responder todas las secciones."
+          });
+          return;
+        }
+      }
     }
 
     const already = localStorage.getItem(voteKey);
@@ -144,38 +167,40 @@ export default function VotingPage({ student, onVoted }) {
     setShowConfirmModal(true);
   }
 
-  // ==========================================================
-  // CONFIRMAR VOTO
-  // ==========================================================
+  // =====================================================
+  // CONFIRM VOTE
+  // =====================================================
   async function confirmVote() {
-    if (!selected || !poll || !student) return;
+    if (!poll || !student) return;
 
-    const already = localStorage.getItem(voteKey);
-
-    if (already) {
-      setShowConfirmModal(false);
-      setStatus({
-        type: "error",
-        text: "Ya votaste."
-      });
-      return;
-    }
+    const type = poll.type || "simple";
 
     setSubmitting(true);
 
     try {
-      await api.castVote({
+      const payload = {
         studentAccount: student.accountNumber,
         studentName: student.name,
         studentCenter: student.center,
-        pollId: poll.pollId,
-        option: selected
-      });
+        pollId: poll.pollId
+      };
+
+      if (type === "simple") {
+        payload.option = selected;
+      }
+
+      if (type === "compound") {
+        payload.answers = answers;
+      }
+
+      await api.castVote(payload);
 
       localStorage.setItem(
         voteKey,
         JSON.stringify({
+          type,
           option: selected,
+          answers,
           timestamp: new Date().toISOString()
         })
       );
@@ -184,7 +209,8 @@ export default function VotingPage({ student, onVoted }) {
 
       setStatus({
         type: "success",
-        text: "Voto registrado correctamente. Gracias por participar."
+        text:
+          "Voto registrado correctamente. Gracias por participar."
       });
 
     } catch (err) {
@@ -196,6 +222,7 @@ export default function VotingPage({ student, onVoted }) {
           err.response?.data?.message ||
           "Error al registrar voto."
       });
+
     } finally {
       setSubmitting(false);
     }
@@ -206,9 +233,9 @@ export default function VotingPage({ student, onVoted }) {
     setShowConfirmModal(false);
   }
 
-  // ==========================================================
+  // =====================================================
   // LOADING
-  // ==========================================================
+  // =====================================================
   if (!poll) {
     return (
       <div className="card">
@@ -217,144 +244,270 @@ export default function VotingPage({ student, onVoted }) {
     );
   }
 
+  const type = poll.type || "simple";
+
   const API_BASE =
     import.meta.env.VITE_API_URL?.replace("/api", "") ||
-    "http://localhost:4000";
+    "http://localhost:4001";
 
   return (
     <>
-      <div className="card">
-        <h2 className="text-2xl font-semibold mb-3">
-          {poll.title}
-        </h2>
+      <div className="card space-y-6">
 
-        <p className="text-sm text-gray-600 mb-4">
-          Votando como <strong>{student.name}</strong> —{" "}
-          {student.accountNumber}
-        </p>
+        {/* HEADER */}
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900">
+            {poll.title}
+          </h2>
+
+          <p className="text-sm text-slate-500 mt-2">
+            Votando como{" "}
+            <strong>{student.name}</strong> —{" "}
+            {student.accountNumber}
+          </p>
+        </div>
 
         <form
           onSubmit={submitVote}
-          className="space-y-4"
+          className="space-y-6"
         >
-          <div className="grid gap-3">
-            {poll.options.map((opt, index) => (
-              <label
-                key={index}
-                className="flex gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  value={opt.text}
-                  checked={selected === opt.text}
-                  onChange={() => setSelected(opt.text)}
-                />
 
-                <div className="flex-1">
-                  <div className="font-semibold text-lg">
-                    {opt.text}
-                  </div>
-
-                  {opt.description && (
-                    <div className="text-sm text-gray-600">
-                      {opt.description}
-                    </div>
-                  )}
-
-                  {opt.imageUrl && (
-                    <img
-                      src={`${API_BASE}${opt.imageUrl}`}
-                      className="w-32 h-32 object-cover rounded mt-2 border"
+          {/* SIMPLE */}
+          {type === "simple" && (
+            <div className="grid gap-4">
+              {(poll.options || []).map(
+                (opt, index) => (
+                  <label
+                    key={index}
+                    className="border rounded-2xl p-4 cursor-pointer hover:bg-slate-50 flex gap-4"
+                  >
+                    <input
+                      type="radio"
+                      checked={
+                        selected === opt.text
+                      }
+                      onChange={() =>
+                        setSelected(opt.text)
+                      }
                     />
-                  )}
-                </div>
-              </label>
-            ))}
-          </div>
 
-          <div className="flex gap-3">
+                    <div className="flex-1">
+                      <div className="font-bold text-lg">
+                        {opt.text}
+                      </div>
+
+                      {opt.description && (
+                        <div className="text-sm text-slate-500">
+                          {opt.description}
+                        </div>
+                      )}
+
+                      {opt.imageUrl && (
+                        <img
+                          src={`${API_BASE}${opt.imageUrl}`}
+                          className="w-32 h-32 rounded-lg border object-cover mt-3"
+                        />
+                      )}
+                    </div>
+                  </label>
+                )
+              )}
+            </div>
+          )}
+
+          {/* COMPOUND */}
+          {type === "compound" && (
+            <div className="space-y-8">
+              {(poll.sections || []).map(
+                (section, i) => (
+                  <div
+                    key={i}
+                    className="border rounded-2xl p-5 bg-slate-50"
+                  >
+                    <h3 className="text-xl font-bold mb-4 text-indigo-700">
+                      {section.title}
+                    </h3>
+
+                    <div className="grid gap-3">
+                      {(
+                        section.options ||
+                        []
+                      ).map((opt, j) => (
+                        <label
+                          key={j}
+                          className="border rounded-xl p-4 bg-white hover:bg-indigo-50 cursor-pointer flex gap-3"
+                        >
+                          <input
+                            type="radio"
+                            checked={
+                              answers[
+                                section.title
+                              ] ===
+                              opt.text
+                            }
+                            onChange={() =>
+                              setAnswers({
+                                ...answers,
+                                [section.title]:
+                                  opt.text
+                              })
+                            }
+                          />
+
+                          <div className="flex-1">
+                            <div className="font-semibold">
+                              {opt.text}
+                            </div>
+
+                            {opt.description && (
+                              <div className="text-sm text-slate-500">
+                                {
+                                  opt.description
+                                }
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+
+          {/* BUTTONS */}
+          <div className="flex flex-wrap gap-3">
             <button
               type="submit"
               disabled={
                 submitting ||
-                status?.type === "success"
+                status?.type ===
+                  "success"
               }
-              className="bg-green-600 text-white px-4 py-2 rounded-lg"
+              className="px-5 py-3 bg-green-600 text-white rounded-xl font-semibold"
             >
-              {submitting ? "Enviando..." : "Votar"}
+              {submitting
+                ? "Enviando..."
+                : "Votar"}
             </button>
 
             <button
               type="button"
               onClick={() => {
                 setSelected("");
+                setAnswers({});
                 setStatus(null);
               }}
-              className="px-4 py-2 border rounded-lg"
+              className="px-5 py-3 border rounded-xl"
             >
               Limpiar
             </button>
           </div>
 
+          {/* STATUS */}
           {status && (
             <div
-              className={
+              className={`rounded-xl px-4 py-3 ${
                 status.type === "error"
-                  ? "text-red-600"
-                  : status.type === "success"
-                  ? "text-green-600"
-                  : "text-blue-600"
-              }
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : status.type ===
+                    "success"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-blue-50 text-blue-700 border border-blue-200"
+              }`}
             >
               {status.text}
             </div>
           )}
 
-          {status?.type === "success" && (
-            <div className="mt-4 bg-gray-100 p-3 rounded-lg border">
+          {/* TIMER */}
+          {status?.type ===
+            "success" && (
+            <div className="bg-slate-100 rounded-xl p-4 border">
               <p className="text-sm">
                 Serás redirigido a resultados en{" "}
-                <strong>{countdown}</strong> segundos...
+                <strong>
+                  {countdown}
+                </strong>{" "}
+                segundos...
               </p>
 
-              <div className="w-full bg-gray-300 h-2 rounded mt-2">
+              <div className="w-full bg-slate-300 h-2 rounded mt-3">
                 <div
                   className="bg-green-600 h-2 rounded"
                   style={{
-                    width: `${(countdown / 5) * 100}%`,
-                    transition: "1s linear"
+                    width: `${
+                      (countdown / 5) *
+                      100
+                    }%`,
+                    transition:
+                      "1s linear"
                   }}
                 ></div>
               </div>
             </div>
           )}
+
         </form>
       </div>
 
       {/* MODAL */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-3">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
+
+            <h3 className="text-2xl font-bold mb-4">
               Confirmar voto
             </h3>
 
-            <p className="mb-2">
-              Vas a votar por:
-            </p>
+            {/* SIMPLE */}
+            {type === "simple" && (
+              <>
+                <p className="mb-2">
+                  Vas a votar por:
+                </p>
 
-            <div className="p-3 border rounded bg-gray-50 mb-4 font-semibold text-green-700">
-              {selected}
-            </div>
+                <div className="border rounded-xl p-3 bg-slate-50 font-semibold text-green-700">
+                  {selected}
+                </div>
+              </>
+            )}
 
-            <p className="text-sm text-red-600 mb-4">
+            {/* COMPOUND */}
+            {type === "compound" && (
+              <div className="space-y-3">
+                {(poll.sections || []).map(
+                  (sec, i) => (
+                    <div
+                      key={i}
+                      className="border rounded-xl p-3 bg-slate-50"
+                    >
+                      <div className="font-semibold text-slate-700">
+                        {sec.title}
+                      </div>
+
+                      <div className="text-green-700 font-bold">
+                        {
+                          answers[
+                            sec.title
+                          ]
+                        }
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            <p className="text-sm text-red-600 mt-4">
               Esta acción no se puede deshacer.
             </p>
 
-            <div className="flex gap-3 justify-end">
+            <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={cancelConfirmation}
-                className="px-4 py-2 border rounded-lg"
+                className="px-4 py-2 border rounded-xl"
               >
                 Cancelar
               </button>
@@ -362,13 +515,14 @@ export default function VotingPage({ student, onVoted }) {
               <button
                 onClick={confirmVote}
                 disabled={submitting}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                className="px-4 py-2 bg-green-600 text-white rounded-xl"
               >
                 {submitting
                   ? "Confirmando..."
                   : "Confirmar voto"}
               </button>
             </div>
+
           </div>
         </div>
       )}
