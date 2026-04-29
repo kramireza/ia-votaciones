@@ -1,28 +1,53 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef
+} from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
-export default function VotingPage({ student, onVoted }) {
+export default function VotingPage({
+  student,
+  onVoted
+}) {
   const navigate = useNavigate();
 
   const [poll, setPoll] = useState(null);
 
   // SIMPLE
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] =
+    useState("");
 
   // COMPOUND
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] =
+    useState({});
 
-  const [status, setStatus] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [status, setStatus] =
+    useState(null);
 
-  const [backendChecked, setBackendChecked] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [countdown, setCountdown] =
+    useState(5);
+
+  const [backendChecked, setBackendChecked] =
+    useState(false);
+
+  const [
+    showConfirmModal,
+    setShowConfirmModal
+  ] = useState(false);
+
+  const sectionRefs = useRef({});
 
   const voteKey = poll
     ? `voted_${poll.pollId}_${student.accountNumber}`
     : null;
+
+  const voteLocked =
+    status?.type === "success" ||
+    status?.type === "info";
 
   // =====================================================
   // LOAD POLL
@@ -30,12 +55,16 @@ export default function VotingPage({ student, onVoted }) {
   useEffect(() => {
     async function loadPoll() {
       try {
-        const res = await api.getActiveElection();
+        const res =
+          await api.getActiveElection();
+
         setPoll(res.data);
+
       } catch {
         setStatus({
           type: "error",
-          text: "No se pudo cargar la elección activa."
+          text:
+            "No se pudo cargar la elección activa."
         });
       }
     }
@@ -51,18 +80,22 @@ export default function VotingPage({ student, onVoted }) {
       if (!student || !poll) return;
 
       try {
-        const res = await api.checkVote(
-          poll.pollId,
-          student.accountNumber
-        );
+        const res =
+          await api.checkVote(
+            poll.pollId,
+            student.accountNumber
+          );
 
         if (res.data.hasVoted) {
           setStatus({
             type: "info",
-            text: "Ya registraste un voto para esta votación."
+            text:
+              "Ya registraste un voto para esta votación."
           });
         } else {
-          localStorage.removeItem(voteKey);
+          localStorage.removeItem(
+            voteKey
+          );
         }
       } catch {}
 
@@ -76,14 +109,20 @@ export default function VotingPage({ student, onVoted }) {
   // CHECK LOCAL
   // =====================================================
   useEffect(() => {
-    if (!voteKey || !backendChecked) return;
+    if (
+      !voteKey ||
+      !backendChecked
+    )
+      return;
 
-    const voted = localStorage.getItem(voteKey);
+    const voted =
+      localStorage.getItem(voteKey);
 
     if (voted) {
       setStatus({
         type: "info",
-        text: "Ya registraste un voto para esta votación."
+        text:
+          "Ya registraste un voto para esta votación."
       });
     }
   }, [voteKey, backendChecked]);
@@ -92,75 +131,122 @@ export default function VotingPage({ student, onVoted }) {
   // REDIRECT
   // =====================================================
   useEffect(() => {
-    if (status?.type === "success") {
+    if (
+      status?.type === "success"
+    ) {
       setCountdown(5);
 
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            onVoted?.();
-            navigate("/resultados");
-            return 0;
-          }
+      const timer =
+        setInterval(() => {
+          setCountdown(
+            (prev) => {
+              if (prev <= 1) {
+                clearInterval(
+                  timer
+                );
 
-          return prev - 1;
-        });
-      }, 1000);
+                onVoted?.();
+                navigate(
+                  "/resultados"
+                );
 
-      return () => clearInterval(timer);
+                return 0;
+              }
+
+              return prev - 1;
+            }
+          );
+        }, 1000);
+
+      return () =>
+        clearInterval(timer);
     }
   }, [status]);
 
   // =====================================================
-  // VALIDATE BEFORE MODAL
+  // PROGRESS
+  // =====================================================
+  const totalSections =
+    poll?.sections?.length || 0;
+
+  const answeredSections =
+    Object.keys(answers).length;
+
+  const progress =
+    totalSections > 0
+      ? (
+          answeredSections /
+          totalSections
+        ) *
+        100
+      : 0;
+
+  // =====================================================
+  // VALIDATE
   // =====================================================
   function submitVote(e) {
     e.preventDefault();
+
+    if (voteLocked) return;
+
     setStatus(null);
 
-    const type = poll?.type || "simple";
+    const type =
+      poll?.type || "simple";
 
     if (type === "simple") {
       if (!selected) {
         setStatus({
           type: "error",
-          text: "Selecciona una opción antes de votar."
+          text:
+            "Selecciona una opción antes de votar."
         });
+
         return;
       }
     }
 
-    if (type === "compound") {
-      const sections = poll.sections || [];
+    if (
+      type === "compound"
+    ) {
+      const sections =
+        poll.sections || [];
 
       for (const sec of sections) {
-        if (!answers[sec.title]) {
+        if (
+          !answers[sec.title]
+        ) {
           setStatus({
             type: "error",
             text:
               "Debes responder todas las secciones."
           });
+
+          sectionRefs.current[
+            sec.title
+          ]?.scrollIntoView({
+            behavior:
+              "smooth",
+            block: "center"
+          });
+
           return;
         }
       }
     }
 
-    const already = localStorage.getItem(voteKey);
+    const already =
+      localStorage.getItem(
+        voteKey
+      );
 
     if (already) {
       setStatus({
         type: "error",
-        text: "Ya has votado."
+        text:
+          "Ya has votado."
       });
-      return;
-    }
 
-    if (status?.type === "info") {
-      setStatus({
-        type: "error",
-        text: "Ya registraste un voto."
-      });
       return;
     }
 
@@ -168,44 +254,67 @@ export default function VotingPage({ student, onVoted }) {
   }
 
   // =====================================================
-  // CONFIRM VOTE
+  // CONFIRM
   // =====================================================
   async function confirmVote() {
-    if (!poll || !student) return;
+    if (
+      !poll ||
+      !student ||
+      submitting ||
+      voteLocked
+    )
+      return;
 
-    const type = poll.type || "simple";
+    const type =
+      poll.type || "simple";
 
     setSubmitting(true);
 
     try {
       const payload = {
-        studentAccount: student.accountNumber,
-        studentName: student.name,
-        studentCenter: student.center,
+        studentAccount:
+          student.accountNumber,
+        studentName:
+          student.name,
+        studentCenter:
+          student.center,
         pollId: poll.pollId
       };
 
-      if (type === "simple") {
-        payload.option = selected;
+      if (
+        type === "simple"
+      ) {
+        payload.option =
+          selected;
       }
 
-      if (type === "compound") {
-        payload.answers = answers;
+      if (
+        type ===
+        "compound"
+      ) {
+        payload.answers =
+          answers;
       }
 
-      await api.castVote(payload);
+      await api.castVote(
+        payload
+      );
 
       localStorage.setItem(
         voteKey,
         JSON.stringify({
           type,
-          option: selected,
+          option:
+            selected,
           answers,
-          timestamp: new Date().toISOString()
+          timestamp:
+            new Date().toISOString()
         })
       );
 
-      setShowConfirmModal(false);
+      setShowConfirmModal(
+        false
+      );
 
       setStatus({
         type: "success",
@@ -214,12 +323,15 @@ export default function VotingPage({ student, onVoted }) {
       });
 
     } catch (err) {
-      setShowConfirmModal(false);
+      setShowConfirmModal(
+        false
+      );
 
       setStatus({
         type: "error",
         text:
-          err.response?.data?.message ||
+          err.response?.data
+            ?.message ||
           "Error al registrar voto."
       });
 
@@ -239,15 +351,21 @@ export default function VotingPage({ student, onVoted }) {
   if (!poll) {
     return (
       <div className="card">
-        <p>Cargando elección...</p>
+        <p>
+          Cargando elección...
+        </p>
       </div>
     );
   }
 
-  const type = poll.type || "simple";
+  const type =
+    poll.type || "simple";
 
   const API_BASE =
-    import.meta.env.VITE_API_URL?.replace("/api", "") ||
+    import.meta.env.VITE_API_URL?.replace(
+      "/api",
+      ""
+    ) ||
     "http://localhost:4001";
 
   return (
@@ -256,14 +374,19 @@ export default function VotingPage({ student, onVoted }) {
 
         {/* HEADER */}
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
             {poll.title}
           </h2>
 
           <p className="text-sm text-slate-500 mt-2">
             Votando como{" "}
-            <strong>{student.name}</strong> —{" "}
-            {student.accountNumber}
+            <strong>
+              {student.name}
+            </strong>{" "}
+            —{" "}
+            {
+              student.accountNumber
+            }
           </p>
         </div>
 
@@ -273,39 +396,62 @@ export default function VotingPage({ student, onVoted }) {
         >
 
           {/* SIMPLE */}
-          {type === "simple" && (
+          {type ===
+            "simple" && (
             <div className="grid gap-4">
-              {(poll.options || []).map(
-                (opt, index) => (
+              {(
+                poll.options ||
+                []
+              ).map(
+                (
+                  opt,
+                  index
+                ) => (
                   <label
-                    key={index}
-                    className="border rounded-2xl p-4 cursor-pointer hover:bg-slate-50 flex gap-4"
+                    key={
+                      index
+                    }
+                    className={`border rounded-2xl p-4 flex gap-4 transition ${
+                      voteLocked
+                        ? "opacity-70 cursor-not-allowed"
+                        : "cursor-pointer hover:bg-slate-50"
+                    }`}
                   >
                     <input
                       type="radio"
+                      disabled={
+                        voteLocked
+                      }
                       checked={
-                        selected === opt.text
+                        selected ===
+                        opt.text
                       }
                       onChange={() =>
-                        setSelected(opt.text)
+                        setSelected(
+                          opt.text
+                        )
                       }
                     />
 
                     <div className="flex-1">
                       <div className="font-bold text-lg">
-                        {opt.text}
+                        {
+                          opt.text
+                        }
                       </div>
 
                       {opt.description && (
                         <div className="text-sm text-slate-500">
-                          {opt.description}
+                          {
+                            opt.description
+                          }
                         </div>
                       )}
 
                       {opt.imageUrl && (
                         <img
                           src={`${API_BASE}${opt.imageUrl}`}
-                          className="w-32 h-32 rounded-lg border object-cover mt-3"
+                          className="w-full max-w-[160px] h-auto rounded-lg border object-cover mt-3"
                         />
                       )}
                     </div>
@@ -316,59 +462,122 @@ export default function VotingPage({ student, onVoted }) {
           )}
 
           {/* COMPOUND */}
-          {type === "compound" && (
+          {type ===
+            "compound" && (
             <div className="space-y-8">
-              {(poll.sections || []).map(
-                (section, i) => (
+
+              {/* PROGRESS */}
+              <div className="bg-slate-50 border rounded-2xl p-4">
+                <div className="flex justify-between text-sm font-medium mb-2">
+                  <span>
+                    Progreso
+                  </span>
+
+                  <span>
+                    {
+                      answeredSections
+                    }{" "}
+                    de{" "}
+                    {
+                      totalSections
+                    }
+                  </span>
+                </div>
+
+                <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                  <div
+                    className="h-3 bg-indigo-600 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${progress}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {(
+                poll.sections ||
+                []
+              ).map(
+                (
+                  section,
+                  i
+                ) => (
                   <div
                     key={i}
+                    ref={(
+                      el
+                    ) =>
+                      (sectionRefs.current[
+                        section.title
+                      ] = el)
+                    }
                     className="border rounded-2xl p-5 bg-slate-50"
                   >
-                    <h3 className="text-xl font-bold mb-4 text-indigo-700">
-                      {section.title}
+                    <h3 className="text-lg md:text-xl font-bold mb-4 text-indigo-700">
+                      {
+                        section.title
+                      }
                     </h3>
 
                     <div className="grid gap-3">
                       {(
                         section.options ||
                         []
-                      ).map((opt, j) => (
-                        <label
-                          key={j}
-                          className="border rounded-xl p-4 bg-white hover:bg-indigo-50 cursor-pointer flex gap-3"
-                        >
-                          <input
-                            type="radio"
-                            checked={
-                              answers[
-                                section.title
-                              ] ===
-                              opt.text
+                      ).map(
+                        (
+                          opt,
+                          j
+                        ) => (
+                          <label
+                            key={
+                              j
                             }
-                            onChange={() =>
-                              setAnswers({
-                                ...answers,
-                                [section.title]:
-                                  opt.text
-                              })
-                            }
-                          />
+                            className={`border rounded-xl p-4 bg-white flex gap-3 transition ${
+                              voteLocked
+                                ? "opacity-70 cursor-not-allowed"
+                                : "cursor-pointer hover:bg-indigo-50"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              disabled={
+                                voteLocked
+                              }
+                              checked={
+                                answers[
+                                  section.title
+                                ] ===
+                                opt.text
+                              }
+                              onChange={() =>
+                                setAnswers(
+                                  {
+                                    ...answers,
+                                    [section.title]:
+                                      opt.text
+                                  }
+                                )
+                              }
+                            />
 
-                          <div className="flex-1">
-                            <div className="font-semibold">
-                              {opt.text}
-                            </div>
-
-                            {opt.description && (
-                              <div className="text-sm text-slate-500">
+                            <div className="flex-1">
+                              <div className="font-semibold">
                                 {
-                                  opt.description
+                                  opt.text
                                 }
                               </div>
-                            )}
-                          </div>
-                        </label>
-                      ))}
+
+                              {opt.description && (
+                                <div className="text-sm text-slate-500">
+                                  {
+                                    opt.description
+                                  }
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        )
+                      )}
                     </div>
                   </div>
                 )
@@ -377,15 +586,14 @@ export default function VotingPage({ student, onVoted }) {
           )}
 
           {/* BUTTONS */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="submit"
               disabled={
                 submitting ||
-                status?.type ===
-                  "success"
+                voteLocked
               }
-              className="px-5 py-3 bg-green-600 text-white rounded-xl font-semibold"
+              className="w-full sm:w-auto px-5 py-3 bg-green-600 text-white rounded-xl font-semibold disabled:opacity-60"
             >
               {submitting
                 ? "Enviando..."
@@ -394,12 +602,19 @@ export default function VotingPage({ student, onVoted }) {
 
             <button
               type="button"
+              disabled={
+                voteLocked
+              }
               onClick={() => {
                 setSelected("");
-                setAnswers({});
-                setStatus(null);
+                setAnswers(
+                  {}
+                );
+                setStatus(
+                  null
+                );
               }}
-              className="px-5 py-3 border rounded-xl"
+              className="w-full sm:w-auto px-5 py-3 border rounded-xl disabled:opacity-60"
             >
               Limpiar
             </button>
@@ -409,7 +624,8 @@ export default function VotingPage({ student, onVoted }) {
           {status && (
             <div
               className={`rounded-xl px-4 py-3 ${
-                status.type === "error"
+                status.type ===
+                "error"
                   ? "bg-red-50 text-red-700 border border-red-200"
                   : status.type ===
                     "success"
@@ -426,9 +642,11 @@ export default function VotingPage({ student, onVoted }) {
             "success" && (
             <div className="bg-slate-100 rounded-xl p-4 border">
               <p className="text-sm">
-                Serás redirigido a resultados en{" "}
+                Serás redirigido en{" "}
                 <strong>
-                  {countdown}
+                  {
+                    countdown
+                  }
                 </strong>{" "}
                 segundos...
               </p>
@@ -438,7 +656,8 @@ export default function VotingPage({ student, onVoted }) {
                   className="bg-green-600 h-2 rounded"
                   style={{
                     width: `${
-                      (countdown / 5) *
+                      (countdown /
+                        5) *
                       100
                     }%`,
                     transition:
@@ -454,15 +673,15 @@ export default function VotingPage({ student, onVoted }) {
 
       {/* MODAL */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4 overflow-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg my-8">
 
             <h3 className="text-2xl font-bold mb-4">
               Confirmar voto
             </h3>
 
-            {/* SIMPLE */}
-            {type === "simple" && (
+            {type ===
+              "simple" && (
               <>
                 <p className="mb-2">
                   Vas a votar por:
@@ -474,17 +693,25 @@ export default function VotingPage({ student, onVoted }) {
               </>
             )}
 
-            {/* COMPOUND */}
-            {type === "compound" && (
-              <div className="space-y-3">
-                {(poll.sections || []).map(
-                  (sec, i) => (
+            {type ===
+              "compound" && (
+              <div className="space-y-3 max-h-[60vh] overflow-auto pr-1">
+                {(
+                  poll.sections ||
+                  []
+                ).map(
+                  (
+                    sec,
+                    i
+                  ) => (
                     <div
                       key={i}
                       className="border rounded-xl p-3 bg-slate-50"
                     >
                       <div className="font-semibold text-slate-700">
-                        {sec.title}
+                        {
+                          sec.title
+                        }
                       </div>
 
                       <div className="text-green-700 font-bold">
@@ -504,18 +731,24 @@ export default function VotingPage({ student, onVoted }) {
               Esta acción no se puede deshacer.
             </p>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
               <button
-                onClick={cancelConfirmation}
-                className="px-4 py-2 border rounded-xl"
+                onClick={
+                  cancelConfirmation
+                }
+                className="w-full sm:w-auto px-4 py-2 border rounded-xl"
               >
                 Cancelar
               </button>
 
               <button
-                onClick={confirmVote}
-                disabled={submitting}
-                className="px-4 py-2 bg-green-600 text-white rounded-xl"
+                onClick={
+                  confirmVote
+                }
+                disabled={
+                  submitting
+                }
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-xl disabled:opacity-60"
               >
                 {submitting
                   ? "Confirmando..."

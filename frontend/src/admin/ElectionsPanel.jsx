@@ -55,7 +55,7 @@ export default function ElectionsPanel({ token }) {
   }, []);
 
   // =====================================================
-  // SIMPLE HELPERS
+  // HELPERS CREATE SIMPLE
   // =====================================================
   function addOption() {
     setOptions([
@@ -75,7 +75,7 @@ export default function ElectionsPanel({ token }) {
   }
 
   // =====================================================
-  // COMPOUND HELPERS
+  // HELPERS CREATE COMPOUND
   // =====================================================
   function addSection() {
     setSections([
@@ -97,36 +97,27 @@ export default function ElectionsPanel({ token }) {
     setSections(copy);
   }
 
-  function addSectionOption(sectionIndex) {
+  function addSectionOption(i) {
     const copy = [...sections];
-    copy[sectionIndex].options.push({
+    copy[i].options.push({
       text: "",
       description: ""
     });
     setSections(copy);
   }
 
-  function updateSectionOption(
-    sectionIndex,
-    optionIndex,
-    field,
-    value
-  ) {
+  function updateSectionOption(i, j, field, value) {
     const copy = [...sections];
-    copy[sectionIndex].options[optionIndex][field] = value;
+    copy[i].options[j][field] = value;
     setSections(copy);
   }
 
-  function removeSectionOption(
-    sectionIndex,
-    optionIndex
-  ) {
+  function removeSectionOption(i, j) {
     const copy = [...sections];
 
-    copy[sectionIndex].options =
-      copy[sectionIndex].options.filter(
-        (_, idx) => idx !== optionIndex
-      );
+    copy[i].options = copy[i].options.filter(
+      (_, idx) => idx !== j
+    );
 
     setSections(copy);
   }
@@ -179,28 +170,21 @@ export default function ElectionsPanel({ token }) {
       setType("simple");
 
       setOptions([
-        {
-          text: "",
-          image: null,
-          description: ""
-        }
+        { text: "", image: null, description: "" }
       ]);
 
       setSections([
         {
           title: "",
-          options: [
-            {
-              text: "",
-              description: ""
-            }
-          ]
+          options: [{ text: "", description: "" }]
         }
       ]);
 
       loadData();
+
     } catch (err) {
       console.error(err);
+
       setMsg({
         type: "error",
         text: "Error creando elección."
@@ -227,8 +211,7 @@ export default function ElectionsPanel({ token }) {
 
         loadData();
       } catch (err) {
-        console.error(err);
-        alert("Error cerrando elección.");
+        alert("Error cerrando.");
       }
 
       return;
@@ -257,8 +240,7 @@ export default function ElectionsPanel({ token }) {
 
       loadData();
     } catch (err) {
-      console.error(err);
-      alert("Error activando elección.");
+      alert("Error activando.");
     }
   }
 
@@ -276,9 +258,9 @@ export default function ElectionsPanel({ token }) {
 
       setConfirmOpen(null);
       loadData();
+
     } catch (err) {
-      console.error(err);
-      alert("Error activando elección.");
+      alert("Error activando.");
     } finally {
       setProcessingOpen(false);
     }
@@ -298,8 +280,6 @@ export default function ElectionsPanel({ token }) {
             token
           );
           alert("Solicitud enviada.");
-        } else {
-          alert("Ruta no disponible.");
         }
       } else {
         await api.deleteElection(
@@ -309,8 +289,8 @@ export default function ElectionsPanel({ token }) {
       }
 
       loadData();
+
     } catch (err) {
-      console.error(err);
       alert("Error.");
     }
   }
@@ -342,18 +322,8 @@ export default function ElectionsPanel({ token }) {
   }
 
   // =====================================================
-  // EDIT HELPERS SIMPLE
+  // EDIT SIMPLE HELPERS
   // =====================================================
-  function updateEditOption(
-    i,
-    field,
-    value
-  ) {
-    const copy = [...editOptions];
-    copy[i][field] = value;
-    setEditOptions(copy);
-  }
-
   function addEditOption() {
     setEditOptions([
       ...editOptions,
@@ -366,6 +336,12 @@ export default function ElectionsPanel({ token }) {
     ]);
   }
 
+  function updateEditOption(i, field, value) {
+    const copy = [...editOptions];
+    copy[i][field] = value;
+    setEditOptions(copy);
+  }
+
   function removeEditOption(i) {
     setEditOptions(
       editOptions.filter(
@@ -375,28 +351,14 @@ export default function ElectionsPanel({ token }) {
   }
 
   // =====================================================
-  // EDIT HELPERS COMPOUND
+  // EDIT COMPOUND HELPERS
   // =====================================================
-  function updateEditSectionTitle(
-    i,
-    value
-  ) {
-    const copy = [...editSections];
-    copy[i].title = value;
-    setEditSections(copy);
-  }
-
   function addEditSection() {
     setEditSections([
       ...editSections,
       {
         title: "",
-        options: [
-          {
-            text: "",
-            description: ""
-          }
-        ]
+        options: [{ text: "", description: "" }]
       }
     ]);
   }
@@ -409,6 +371,12 @@ export default function ElectionsPanel({ token }) {
     );
   }
 
+  function updateEditSectionTitle(i, value) {
+    const copy = [...editSections];
+    copy[i].title = value;
+    setEditSections(copy);
+  }
+
   function addEditSectionOption(i) {
     const copy = [...editSections];
     copy[i].options.push({
@@ -418,31 +386,18 @@ export default function ElectionsPanel({ token }) {
     setEditSections(copy);
   }
 
-  function updateEditSectionOption(
-    sectionIndex,
-    optionIndex,
-    field,
-    value
-  ) {
+  function updateEditSectionOption(i, j, field, value) {
     const copy = [...editSections];
-
-    copy[sectionIndex].options[
-      optionIndex
-    ][field] = value;
-
+    copy[i].options[j][field] = value;
     setEditSections(copy);
   }
 
-  function removeEditSectionOption(
-    sectionIndex,
-    optionIndex
-  ) {
+  function removeEditSectionOption(i, j) {
     const copy = [...editSections];
 
-    copy[sectionIndex].options =
-      copy[sectionIndex].options.filter(
-        (_, idx) => idx !== optionIndex
-      );
+    copy[i].options = copy[i].options.filter(
+      (_, idx) => idx !== j
+    );
 
     setEditSections(copy);
   }
@@ -457,17 +412,15 @@ export default function ElectionsPanel({ token }) {
     formData.append("type", editType);
 
     if (editType === "simple") {
-      const formatted = editOptions.map(
-        (o) => ({
-          text: o.text,
-          imageUrl: o.imageUrl || null,
-          newImage: o.newImage
-            ? o.newImage.name
-            : null,
-          description:
-            o.description?.trim() || null
-        })
-      );
+      const formatted = editOptions.map((o) => ({
+        text: o.text,
+        imageUrl: o.imageUrl || null,
+        newImage: o.newImage
+          ? o.newImage.name
+          : null,
+        description:
+          o.description?.trim() || null
+      }));
 
       formData.append(
         "options",
@@ -500,8 +453,6 @@ export default function ElectionsPanel({ token }) {
             token
           );
           alert("Solicitud enviada.");
-        } else {
-          alert("Ruta no disponible.");
         }
       } else {
         await api.editElection(
@@ -513,8 +464,8 @@ export default function ElectionsPanel({ token }) {
 
       setEditing(null);
       loadData();
+
     } catch (err) {
-      console.error(err);
       alert("Error guardando.");
     }
   }
@@ -526,6 +477,7 @@ export default function ElectionsPanel({ token }) {
   const active = elections.filter(
     (e) => e.status === "open"
   ).length;
+
   const closed = elections.filter(
     (e) => e.status === "closed"
   ).length;
@@ -534,13 +486,13 @@ export default function ElectionsPanel({ token }) {
     <div className="space-y-8">
 
       {/* HEADER */}
-      <div className="rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 text-white p-6 shadow-xl">
-        <h2 className="text-3xl md:text-4xl font-black tracking-tight">
+      <div className="rounded-3xl bg-gradient-to-r from-indigo-700 to-blue-600 text-white p-6 shadow-xl">
+        <h2 className="text-3xl font-black">
           Gestión de Elecciones
         </h2>
 
         <p className="text-indigo-100 mt-2">
-          Panel profesional de administración electoral
+          Administración profesional del proceso electoral
         </p>
       </div>
 
@@ -548,9 +500,9 @@ export default function ElectionsPanel({ token }) {
       <div className="grid md:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl shadow border p-5">
           <div className="text-sm text-gray-500">
-            Total registradas
+            Total
           </div>
-          <div className="text-3xl font-black text-slate-800 mt-1">
+          <div className="text-3xl font-black">
             {total}
           </div>
         </div>
@@ -559,7 +511,7 @@ export default function ElectionsPanel({ token }) {
           <div className="text-sm text-gray-500">
             Activas
           </div>
-          <div className="text-3xl font-black text-green-600 mt-1">
+          <div className="text-3xl font-black text-green-600">
             {active}
           </div>
         </div>
@@ -568,15 +520,15 @@ export default function ElectionsPanel({ token }) {
           <div className="text-sm text-gray-500">
             Cerradas
           </div>
-          <div className="text-3xl font-black text-red-500 mt-1">
+          <div className="text-3xl font-black text-red-600">
             {closed}
           </div>
         </div>
       </div>
 
-      {/* CREAR */}
-      <div className="bg-white p-6 rounded-3xl shadow-xl border">
-        <h3 className="text-xl font-bold mb-5">
+      {/* FORM CREATE */}
+      <div className="bg-white rounded-3xl shadow-xl border p-6 space-y-4">
+        <h3 className="text-xl font-bold">
           Crear nueva elección
         </h3>
 
@@ -585,25 +537,26 @@ export default function ElectionsPanel({ token }) {
           className="space-y-4"
         >
           <input
-            className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Título general"
             value={title}
             onChange={(e) =>
               setTitle(e.target.value)
             }
+            placeholder="Título general"
+            className="w-full border rounded-xl px-4 py-3"
             required
           />
 
           <select
-            className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             value={type}
             onChange={(e) =>
               setType(e.target.value)
             }
+            className="w-full border rounded-xl px-4 py-3"
           >
             <option value="simple">
               Elección simple
             </option>
+
             <option value="compound">
               Elección compuesta
             </option>
@@ -615,12 +568,12 @@ export default function ElectionsPanel({ token }) {
               {options.map((opt, i) => (
                 <div
                   key={i}
-                  className="border rounded-2xl p-4 bg-slate-50"
+                  className="bg-slate-50 border rounded-2xl p-4"
                 >
                   <input
                     className="w-full border rounded-xl px-4 py-3 mb-3"
-                    placeholder={`Opción ${i + 1}`}
                     value={opt.text}
+                    placeholder={`Opción ${i + 1}`}
                     onChange={(e) =>
                       updateOption(
                         i,
@@ -628,12 +581,11 @@ export default function ElectionsPanel({ token }) {
                         e.target.value
                       )
                     }
-                    required
                   />
 
                   <textarea
+                    rows="2"
                     className="w-full border rounded-xl px-4 py-3 mb-3"
-                    rows="3"
                     placeholder="Descripción"
                     value={opt.description}
                     onChange={(e) =>
@@ -687,12 +639,12 @@ export default function ElectionsPanel({ token }) {
               {sections.map((sec, i) => (
                 <div
                   key={i}
-                  className="border rounded-2xl p-4 bg-slate-50"
+                  className="bg-slate-50 border rounded-2xl p-4"
                 >
                   <input
                     className="w-full border rounded-xl px-4 py-3 mb-3"
-                    placeholder="Título de sección"
                     value={sec.title}
+                    placeholder="Título de sección"
                     onChange={(e) =>
                       updateSectionTitle(
                         i,
@@ -701,63 +653,55 @@ export default function ElectionsPanel({ token }) {
                     }
                   />
 
-                  {sec.options.map(
-                    (opt, j) => (
-                      <div
-                        key={j}
-                        className="bg-white border rounded-xl p-4 mb-3"
-                      >
-                        <input
-                          className="w-full border rounded-xl px-4 py-3 mb-2"
-                          placeholder="Opción"
-                          value={opt.text}
-                          onChange={(e) =>
-                            updateSectionOption(
-                              i,
-                              j,
-                              "text",
-                              e.target.value
-                            )
-                          }
-                        />
+                  {sec.options.map((opt, j) => (
+                    <div
+                      key={j}
+                      className="bg-white border rounded-xl p-4 mb-3"
+                    >
+                      <input
+                        className="w-full border rounded-xl px-4 py-3 mb-2"
+                        value={opt.text}
+                        placeholder="Opción"
+                        onChange={(e) =>
+                          updateSectionOption(
+                            i,
+                            j,
+                            "text",
+                            e.target.value
+                          )
+                        }
+                      />
 
-                        <textarea
-                          className="w-full border rounded-xl px-4 py-3"
-                          rows="2"
-                          placeholder="Descripción"
-                          value={
-                            opt.description
-                          }
-                          onChange={(e) =>
-                            updateSectionOption(
-                              i,
-                              j,
-                              "description",
-                              e.target.value
-                            )
-                          }
-                        />
+                      <textarea
+                        rows="2"
+                        className="w-full border rounded-xl px-4 py-3"
+                        value={opt.description}
+                        placeholder="Descripción"
+                        onChange={(e) =>
+                          updateSectionOption(
+                            i,
+                            j,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                      />
 
-                        {sec.options.length >
-                          1 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeSectionOption(
-                                i,
-                                j
-                              )
-                            }
-                            className="mt-3 text-red-600 font-semibold"
-                          >
-                            Eliminar opción
-                          </button>
-                        )}
-                      </div>
-                    )
-                  )}
+                      {sec.options.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeSectionOption(i, j)
+                          }
+                          className="mt-3 text-red-600 font-semibold"
+                        >
+                          Eliminar opción
+                        </button>
+                      )}
+                    </div>
+                  ))}
 
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex gap-3 flex-wrap">
                     <button
                       type="button"
                       onClick={() =>
@@ -793,14 +737,14 @@ export default function ElectionsPanel({ token }) {
             </div>
           )}
 
-          <button className="w-full py-3 rounded-xl bg-indigo-700 text-white font-semibold shadow">
+          <button className="w-full bg-indigo-700 text-white rounded-xl py-3 font-semibold">
             Crear elección
           </button>
         </form>
 
         {msg && (
           <div
-            className={`mt-4 rounded-xl p-3 text-sm ${
+            className={`rounded-xl p-3 text-sm ${
               msg.type === "error"
                 ? "bg-red-50 text-red-700"
                 : "bg-green-50 text-green-700"
@@ -811,7 +755,7 @@ export default function ElectionsPanel({ token }) {
         )}
       </div>
 
-      {/* LISTADO */}
+      {/* TABLE */}
       <div className="bg-white rounded-3xl shadow-xl border overflow-hidden">
         <div className="p-5 border-b">
           <h3 className="text-xl font-bold">
@@ -843,7 +787,7 @@ export default function ElectionsPanel({ token }) {
               {elections.map((e) => (
                 <tr
                   key={e.pollId}
-                  className="border-t hover:bg-slate-50 transition"
+                  className="border-t hover:bg-slate-50"
                 >
                   <td className="p-4 font-mono text-sm">
                     {e.pollId}
@@ -872,12 +816,12 @@ export default function ElectionsPanel({ token }) {
                   </td>
 
                   <td className="p-4">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <button
                         onClick={() =>
                           toggleStatus(e)
                         }
-                        className="px-3 py-2 rounded-xl bg-yellow-500 text-white text-sm"
+                        className="px-3 py-2 bg-yellow-500 text-white rounded-xl text-sm"
                       >
                         {e.status === "open"
                           ? "Cerrar"
@@ -888,7 +832,7 @@ export default function ElectionsPanel({ token }) {
                         onClick={() =>
                           openEditModal(e)
                         }
-                        className="px-3 py-2 rounded-xl bg-blue-600 text-white text-sm"
+                        className="px-3 py-2 bg-blue-600 text-white rounded-xl text-sm"
                       >
                         Editar
                       </button>
@@ -899,7 +843,7 @@ export default function ElectionsPanel({ token }) {
                             e.pollId
                           )
                         }
-                        className="px-3 py-2 rounded-xl bg-red-600 text-white text-sm"
+                        className="px-3 py-2 bg-red-600 text-white rounded-xl text-sm"
                       >
                         {role === "editor"
                           ? "Solicitar"
@@ -925,10 +869,11 @@ export default function ElectionsPanel({ token }) {
         </div>
       </div>
 
-      {/* MODAL EDITAR */}
+      {/* MODAL EDIT */}
       {editing && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-start p-4 overflow-auto">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-6 my-8">
+        <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-start p-4 overflow-auto">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-6 my-8">
+
             <h2 className="text-2xl font-bold mb-5">
               Editar elección
             </h2>
@@ -937,11 +882,187 @@ export default function ElectionsPanel({ token }) {
               className="w-full border rounded-xl px-4 py-3 mb-4"
               value={editTitle}
               onChange={(e) =>
-                setEditTitle(
-                  e.target.value
-                )
+                setEditTitle(e.target.value)
               }
             />
+
+            {/* EDIT SIMPLE */}
+            {editType === "simple" && (
+              <div className="space-y-4">
+                {editOptions.map((opt, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-50 border rounded-2xl p-4"
+                  >
+                    <input
+                      className="w-full border rounded-xl px-4 py-3 mb-3"
+                      value={opt.text}
+                      placeholder="Opción"
+                      onChange={(e) =>
+                        updateEditOption(
+                          i,
+                          "text",
+                          e.target.value
+                        )
+                      }
+                    />
+
+                    <textarea
+                      rows="2"
+                      className="w-full border rounded-xl px-4 py-3 mb-3"
+                      value={opt.description}
+                      placeholder="Descripción"
+                      onChange={(e) =>
+                        updateEditOption(
+                          i,
+                          "description",
+                          e.target.value
+                        )
+                      }
+                    />
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        updateEditOption(
+                          i,
+                          "newImage",
+                          e.target.files[0]
+                        )
+                      }
+                    />
+
+                    {editOptions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeEditOption(i)
+                        }
+                        className="mt-3 px-4 py-2 bg-red-600 text-white rounded-xl"
+                      >
+                        Eliminar opción
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addEditOption}
+                  className="px-4 py-2 bg-green-600 text-white rounded-xl"
+                >
+                  + Agregar opción
+                </button>
+              </div>
+            )}
+
+            {/* EDIT COMPOUND */}
+            {editType === "compound" && (
+              <div className="space-y-4">
+                {editSections.map((sec, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-50 border rounded-2xl p-4"
+                  >
+                    <input
+                      className="w-full border rounded-xl px-4 py-3 mb-3"
+                      value={sec.title}
+                      placeholder="Título de sección"
+                      onChange={(e) =>
+                        updateEditSectionTitle(
+                          i,
+                          e.target.value
+                        )
+                      }
+                    />
+
+                    {sec.options.map((opt, j) => (
+                      <div
+                        key={j}
+                        className="bg-white border rounded-xl p-4 mb-3"
+                      >
+                        <input
+                          className="w-full border rounded-xl px-4 py-3 mb-2"
+                          value={opt.text}
+                          placeholder="Opción"
+                          onChange={(e) =>
+                            updateEditSectionOption(
+                              i,
+                              j,
+                              "text",
+                              e.target.value
+                            )
+                          }
+                        />
+
+                        <textarea
+                          rows="2"
+                          className="w-full border rounded-xl px-4 py-3"
+                          value={opt.description}
+                          placeholder="Descripción"
+                          onChange={(e) =>
+                            updateEditSectionOption(
+                              i,
+                              j,
+                              "description",
+                              e.target.value
+                            )
+                          }
+                        />
+
+                        {sec.options.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeEditSectionOption(
+                                i,
+                                j
+                              )
+                            }
+                            className="mt-3 text-red-600 font-semibold"
+                          >
+                            Eliminar opción
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    <div className="flex gap-3 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          addEditSectionOption(i)
+                        }
+                        className="px-4 py-2 bg-green-600 text-white rounded-xl"
+                      >
+                        + Opción
+                      </button>
+
+                      {editSections.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeEditSection(i)
+                          }
+                          className="px-4 py-2 bg-red-600 text-white rounded-xl"
+                        >
+                          Eliminar sección
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addEditSection}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl"
+                >
+                  + Agregar sección
+                </button>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 mt-6">
               <button
@@ -960,32 +1081,34 @@ export default function ElectionsPanel({ token }) {
                 Guardar cambios
               </button>
             </div>
+
           </div>
         </div>
       )}
 
-      {/* MODAL CONFIRMAR APERTURA */}
+      {/* MODAL OPEN */}
       {confirmOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6">
+
             <div className="text-center">
               <div className="text-5xl mb-3">
                 ⚠️
               </div>
 
-              <h3 className="text-2xl font-bold text-gray-800">
+              <h3 className="text-2xl font-bold">
                 Ya existe una elección activa
               </h3>
 
-              <p className="text-gray-600 mt-3">
+              <p className="mt-3 text-gray-600">
                 <strong>
                   {confirmOpen.current.title}
                 </strong>
                 <br />
-                se cerrará automáticamente.
+                será cerrada.
               </p>
 
-              <p className="text-gray-600 mt-3">
+              <p className="mt-3 text-gray-600">
                 Se abrirá:
                 <br />
                 <strong>
@@ -999,7 +1122,7 @@ export default function ElectionsPanel({ token }) {
                 onClick={() =>
                   setConfirmOpen(null)
                 }
-                className="flex-1 border rounded-xl py-3 font-semibold"
+                className="flex-1 border rounded-xl py-3"
               >
                 Cancelar
               </button>
@@ -1007,16 +1130,18 @@ export default function ElectionsPanel({ token }) {
               <button
                 onClick={confirmOpenElection}
                 disabled={processingOpen}
-                className="flex-1 bg-indigo-600 text-white rounded-xl py-3 font-semibold"
+                className="flex-1 bg-indigo-600 text-white rounded-xl py-3"
               >
                 {processingOpen
                   ? "Procesando..."
                   : "Confirmar"}
               </button>
             </div>
+
           </div>
         </div>
       )}
+
     </div>
   );
 }

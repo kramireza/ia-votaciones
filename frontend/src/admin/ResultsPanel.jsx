@@ -1,244 +1,496 @@
-import React, { useEffect, useState } from "react";
-import api from "../services/api";
-
-// 📊 Chart
-import { Bar } from "react-chartjs-2";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Bar
+} from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  BarElement,
   CategoryScale,
   LinearScale,
+  BarElement,
   Tooltip,
-  Legend,
+  Legend
 } from "chart.js";
+import api from "../services/api";
 
-// 🧾 PDF
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend
+);
 
 export default function ResultsPanel({ token }) {
+  const [results, setResults] = useState([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const [elections, setElections] = useState([]);
-  const [selectedPoll, setSelectedPoll] = useState(null);
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:4000";
-
-  // -------------------------------------------------------------
-  // Cargar elecciones
-  // -------------------------------------------------------------
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await api.getElections(token);
-        setElections(res.data);
-      } catch (err) {
-        console.error("Error cargando elecciones", err);
-        alert("No se pudieron cargar las elecciones");
-      }
-    }
-    load();
-  }, [token]);
-
-  // -------------------------------------------------------------
-  // Cargar resultados
-  // -------------------------------------------------------------
-  async function loadResults(pollId) {
-    setLoading(true);
-    setResult(null);
-
+  // =====================================================
+  // LOAD
+  // =====================================================
+  async function loadResults() {
     try {
-      const res = await api.getDetailedResults(pollId, token);
-      setResult(res.data);
+      const res = await api.getAllResults(token);
+      const list = res.data || [];
+
+      setResults(list);
+
+      if (!selectedId && list.length > 0) {
+        setSelectedId(list[0].pollId);
+      }
+
     } catch (err) {
       console.error(err);
-      alert("Error cargando resultados");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
-  // -------------------------------------------------------------
-  // Exportar PDF
-  // -------------------------------------------------------------
-  async function exportPDF() {
-    const element = document.getElementById("results-area");
+  useEffect(() => {
+    loadResults();
+  }, []);
 
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
+  const selected = useMemo(() => {
+    return results.find(
+      (r) => r.pollId === selectedId
+    );
+  }, [results, selectedId]);
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = 210;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+  // =====================================================
+  // HELPERS
+  // =====================================================
+  function percent(votes, total) {
+    if (!total) return "0.0";
+    return (
+      (votes / total) *
+      100
+    ).toFixed(1);
+  }
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeight);
-    pdf.save(`resultados_${result.pollId}.pdf`);
+  // =====================================================
+  // SIMPLE CHART
+  // =====================================================
+  const simpleChart = useMemo(() => {
+    if (!selected) return null;
 
-    // 📌 REGISTRAR LOG EN BACKEND
-    await api.post(`/logs/pdf`, {
-      pollTitle: result.title
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const labels =
+      selected.options?.map(
+        (o) => o.text
+      ) || [];
+
+    const data =
+      selected.options?.map(
+        (o) => o.votes
+      ) || [];
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Votos",
+          data
+        }
+      ]
+    };
+  }, [selected]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3xl p-6 shadow border">
+        Cargando resultados...
+      </div>
+    );
   }
 
   return (
-    <div>
+    <div className="space-y-8">
 
-      <h2 className="text-2xl font-bold mb-4">Resultados de Elecciones</h2>
+      {/* HEADER */}
+      <div className="rounded-3xl bg-gradient-to-r from-indigo-700 to-blue-600 text-white p-6 shadow-xl">
+        <h2 className="text-3xl font-black">
+          Resultados Generales
+        </h2>
 
-      {/* SELECTOR DE ELECCIÓN */}
-      <select
-        className="input p-2 border rounded w-80 mb-6"
-        value={selectedPoll || ""}
-        onChange={(e) => {
-          setSelectedPoll(e.target.value);
-          if (e.target.value) loadResults(e.target.value);
-        }}
-      >
-        <option value="">-- Selecciona una elección --</option>
-        {elections.map((e) => (
-          <option key={e.pollId} value={e.pollId}>
-            {e.title}
-          </option>
-        ))}
-      </select>
+        <p className="text-indigo-100 mt-2">
+          Dashboard administrativo de resultados electorales
+        </p>
+      </div>
 
-      {loading && <p>Cargando...</p>}
+      {/* SELECTOR */}
+      <div className="bg-white rounded-3xl shadow border p-6">
+        <label className="block text-sm font-semibold mb-2">
+          Seleccionar elección
+        </label>
 
-      {result && (
-        <div className="space-y-6" id="results-area">
-
-          {/* BOTÓN PDF */}
-          <button
-            onClick={exportPDF}
-            className="px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700"
-          >
-            Exportar PDF
-          </button>
-
-          {/* 🔥🔥 BOTONES DE EXCEL (AGREGADOS AQUÍ) 🔥🔥 */}
-          <div className="flex gap-4 mt-4">
-
-            {/* Excel — votos completos */}
-            <button
-              onClick={async () => {
-                try {
-                  const res = await api.exportExcelAll(token, selectedPoll);
-                  const blob = new Blob([res.data]);
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `votos_${selectedPoll}.xlsx`;
-                  a.click();
-                } catch {
-                  alert("Error exportando votos");
-                }
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700"
+        <select
+          className="w-full border rounded-xl px-4 py-3"
+          value={selectedId}
+          onChange={(e) =>
+            setSelectedId(
+              e.target.value
+            )
+          }
+        >
+          {results.map((r) => (
+            <option
+              key={r.pollId}
+              value={r.pollId}
             >
-              Descargar Excel (Votos)
-            </button>
+              {r.title}
+            </option>
+          ))}
+        </select>
+      </div>
 
-            {/* Excel — resultados agrupados */}
-            <button
-              onClick={async () => {
-                try {
-                  const res = await api.exportExcelResults(token, selectedPoll);
-                  const blob = new Blob([res.data]);
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `resultados_${selectedPoll}.xlsx`;
-                  a.click();
-                } catch {
-                  alert("Error exportando resultados");
-                }
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
-            >
-              Descargar Excel (Resultados)
-            </button>
+      {!selected && (
+        <div className="bg-white rounded-3xl shadow border p-6">
+          No hay resultados disponibles.
+        </div>
+      )}
+
+      {selected && (
+        <>
+          {/* SUMMARY */}
+          <div className="grid md:grid-cols-4 gap-4">
+
+            <div className="bg-white rounded-2xl shadow border p-5">
+              <div className="text-sm text-gray-500">
+                ID
+              </div>
+
+              <div className="font-mono text-sm mt-1 break-all">
+                {selected.pollId}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow border p-5">
+              <div className="text-sm text-gray-500">
+                Tipo
+              </div>
+
+              <div className="font-bold mt-1 capitalize">
+                {selected.type ||
+                  "simple"}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow border p-5">
+              <div className="text-sm text-gray-500">
+                Estado
+              </div>
+
+              <div className="mt-1">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    selected.status ===
+                    "open"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {selected.status ===
+                  "open"
+                    ? "Activa"
+                    : "Cerrada"}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow border p-5">
+              <div className="text-sm text-gray-500">
+                Total votos
+              </div>
+
+              <div className="text-3xl font-black mt-1">
+                {selected.totalVotes || 0}
+              </div>
+            </div>
 
           </div>
-          {/* 🔥 FIN DEL BLOQUE AÑADIDO */}
 
-          {/* TÍTULO Y TOTAL */}
-          <div className="p-4 bg-white border rounded shadow">
-            <h3 className="text-xl font-semibold">{result.title}</h3>
-            <p className="text-gray-600">Total de votos: {result.totalVotes}</p>
+          {/* TITLE */}
+          <div className="bg-white rounded-3xl shadow border p-6">
+            <h3 className="text-2xl font-bold">
+              {selected.title}
+            </h3>
           </div>
 
-          {/* LISTA DE OPCIONES */}
-          {result.options.map((opt, i) => {
-            const percent =
-              result.totalVotes > 0
-                ? ((opt.votes / result.totalVotes) * 100).toFixed(1)
-                : 0;
+          {/* ================================================= */}
+          {/* SIMPLE */}
+          {/* ================================================= */}
+          {(selected.type ||
+            "simple") ===
+            "simple" && (
+            <>
+              {/* CHART */}
+              <div className="bg-white rounded-3xl shadow border p-6">
+                <h4 className="text-lg font-bold mb-4">
+                  Gráfica general
+                </h4>
 
-            return (
-              <div
-                key={i}
-                className="p-4 bg-white border rounded shadow flex gap-4 items-center"
-              >
-                {/* Imagen */}
-                {opt.imageUrl && (
-                  <img
-                    src={`${API_BASE}${opt.imageUrl}`}
-                    className="w-24 h-24 object-cover rounded border"
-                  />
-                )}
+                <Bar
+                  data={simpleChart}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        display: false
+                      }
+                    }
+                  }}
+                />
+              </div>
 
-                {/* Detalles */}
-                <div className="flex-1">
-                  <div className="font-semibold text-lg">{opt.text}</div>
-                  <div className="text-gray-600 text-sm">
-                    {opt.votes} votos ({percent}%)
-                  </div>
+              {/* TABLE */}
+              <div className="bg-white rounded-3xl shadow border overflow-hidden">
+                <div className="p-5 border-b">
+                  <h4 className="text-lg font-bold">
+                    Resultados detallados
+                  </h4>
+                </div>
 
-                  {/* Barra */}
-                  <div className="w-full bg-gray-200 h-3 rounded mt-2">
-                    <div
-                      className="bg-indigo-600 h-3 rounded"
-                      style={{ width: `${percent}%` }}
-                    ></div>
-                  </div>
+                <div className="overflow-auto">
+                  <table className="w-full min-w-[700px]">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="p-4 text-left">
+                          Opción
+                        </th>
+                        <th className="p-4 text-left">
+                          Votos
+                        </th>
+                        <th className="p-4 text-left">
+                          %
+                        </th>
+                        <th className="p-4 text-left">
+                          Barra
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {selected.options?.map(
+                        (opt, i) => (
+                          <tr
+                            key={i}
+                            className="border-t"
+                          >
+                            <td className="p-4 font-semibold">
+                              {opt.text}
+                            </td>
+
+                            <td className="p-4">
+                              {opt.votes}
+                            </td>
+
+                            <td className="p-4">
+                              {percent(
+                                opt.votes,
+                                selected.totalVotes
+                              )}
+                              %
+                            </td>
+
+                            <td className="p-4 w-[320px]">
+                              <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-3 bg-indigo-600 rounded-full"
+                                  style={{
+                                    width: `${percent(
+                                      opt.votes,
+                                      selected.totalVotes
+                                    )}%`
+                                  }}
+                                ></div>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            );
-          })}
+            </>
+          )}
 
-          {/* 📊 GRÁFICO DE BARRAS */}
-          <div className="bg-white p-6 border rounded shadow">
-            <h3 className="text-lg font-semibold mb-4">Gráfico de Barras</h3>
+          {/* ================================================= */}
+          {/* COMPOUND */}
+          {/* ================================================= */}
+          {selected.type ===
+            "compound" && (
+            <div className="space-y-6">
+              {selected.sections?.map(
+                (section, idx) => {
+                  const totalSectionVotes =
+                    section.options?.reduce(
+                      (
+                        acc,
+                        item
+                      ) =>
+                        acc +
+                        (item.votes ||
+                          0),
+                      0
+                    ) || 0;
 
-            <Bar
-              data={{
-                labels: result.options.map((o) => o.text),
-                datasets: [
-                  {
-                    label: "Votos",
-                    data: result.options.map((o) => o.votes),
-                    backgroundColor: "rgba(54, 162, 235, 0.6)",
-                    borderColor: "rgba(54, 162, 235, 1)",
-                    borderWidth: 1,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                  y: { beginAtZero: true },
-                },
-              }}
-            />
-          </div>
+                  const winner =
+                    [...(section.options ||
+                      [])].sort(
+                      (a, b) =>
+                        (b.votes ||
+                          0) -
+                        (a.votes ||
+                          0)
+                    )[0];
 
-        </div>
+                  const chartData = {
+                    labels:
+                      section.options?.map(
+                        (o) =>
+                          o.text
+                      ) || [],
+                    datasets: [
+                      {
+                        label:
+                          "Votos",
+                        data:
+                          section.options?.map(
+                            (
+                              o
+                            ) =>
+                              o.votes
+                          ) || []
+                      }
+                    ]
+                  };
+
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-white rounded-3xl shadow border p-6 space-y-5"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                          <h4 className="text-xl font-bold">
+                            {
+                              section.title
+                            }
+                          </h4>
+
+                          <p className="text-sm text-gray-500">
+                            Total votos:{" "}
+                            {
+                              totalSectionVotes
+                            }
+                          </p>
+                        </div>
+
+                        {winner && (
+                          <div className="px-4 py-2 rounded-2xl bg-green-50 text-green-700 text-sm font-semibold">
+                            Ganador:{" "}
+                            {
+                              winner.text
+                            }
+                          </div>
+                        )}
+                      </div>
+
+                      <Bar
+                        data={
+                          chartData
+                        }
+                        options={{
+                          responsive: true,
+                          plugins: {
+                            legend:
+                              {
+                                display: false
+                              }
+                          }
+                        }}
+                      />
+
+                      <div className="overflow-auto">
+                        <table className="w-full min-w-[700px]">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="p-4 text-left">
+                                Opción
+                              </th>
+
+                              <th className="p-4 text-left">
+                                Votos
+                              </th>
+
+                              <th className="p-4 text-left">
+                                %
+                              </th>
+
+                              <th className="p-4 text-left">
+                                Barra
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {section.options?.map(
+                              (
+                                opt,
+                                j
+                              ) => (
+                                <tr
+                                  key={
+                                    j
+                                  }
+                                  className="border-t"
+                                >
+                                  <td className="p-4 font-semibold">
+                                    {
+                                      opt.text
+                                    }
+                                  </td>
+
+                                  <td className="p-4">
+                                    {
+                                      opt.votes
+                                    }
+                                  </td>
+
+                                  <td className="p-4">
+                                    {percent(
+                                      opt.votes,
+                                      totalSectionVotes
+                                    )}
+                                    %
+                                  </td>
+
+                                  <td className="p-4 w-[320px]">
+                                    <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-3 bg-indigo-600 rounded-full"
+                                        style={{
+                                          width: `${percent(
+                                            opt.votes,
+                                            totalSectionVotes
+                                          )}%`
+                                        }}
+                                      ></div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
