@@ -37,7 +37,7 @@ export default function StudentsPanel({
 
       setMsg({
         type: "success",
-        text: `Insertados: ${res.data.insertados}`
+        text: `Insertados: ${res.data.insertados} | Duplicados: ${res.data.duplicados} | Errores: ${res.data.errores}`
       });
 
     } catch {
@@ -127,12 +127,12 @@ export default function StudentsPanel({
             </div>
 
             <div>
-              numeroCuenta,nombre,centro
+              accountNumber,name,center,email
             </div>
 
             <div className="mt-2">
               Ejemplo:
-              20190000111,Juan Pérez,VS
+              20190000111,Juan Pérez,VS,juan@email.com
             </div>
           </div>
 
@@ -157,12 +157,8 @@ export default function StudentsPanel({
               type="button"
               disabled={loading}
               onClick={() => {
-                setCsvFile(
-                  null
-                );
-                setMsg(
-                  null
-                );
+                setCsvFile(null);
+                setMsg(null);
               }}
               className="w-full sm:w-auto px-6 py-3 rounded-xl border font-semibold hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition disabled:opacity-60"
             >

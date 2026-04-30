@@ -67,9 +67,37 @@ async function importStudents(req, res) {
       });
     }
 
-    await Student.bulkCreate(results, {
-      ignoreDuplicates: true
+    // =========================================
+    // 🔥 NUEVO: DETECTAR DUPLICADOS
+    // =========================================
+    const accounts = results.map(r => r.accountNumber);
+
+    const existingStudents = await Student.findAll({
+      where: {
+        accountNumber: accounts
+      },
+      attributes: ["accountNumber"]
     });
+
+    const existingSet = new Set(
+      existingStudents.map(s => s.accountNumber)
+    );
+
+    const newStudents = [];
+    const duplicates = [];
+
+    for (const student of results) {
+      if (existingSet.has(student.accountNumber)) {
+        duplicates.push(student);
+      } else {
+        newStudents.push(student);
+      }
+    }
+
+    // Insertar solo nuevos
+    if (newStudents.length > 0) {
+      await Student.bulkCreate(newStudents);
+    }
 
     fs.unlinkSync(filePath);
 
@@ -77,13 +105,14 @@ async function importStudents(req, res) {
       admin: req.admin,
       action: "import_students",
       entity: "student",
-      details: `Importados: ${results.length}`,
+      details: `Insertados: ${newStudents.length}, Duplicados: ${duplicates.length}`,
       req
     });
 
     res.json({
       message: "Importación completada",
-      insertados: results.length,
+      insertados: newStudents.length,
+      duplicados: duplicates.length,
       errores: errors.length,
       detallesErrores: errors
     });
