@@ -516,65 +516,107 @@ export default function AdminRequestsPanel({
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {Array.isArray(
-                      selected
-                        .payload
-                        .options
-                    ) &&
-                    selected
-                      .payload
-                      .options
-                      .length >
-                      0 ? (
-                      selected.payload.options.map(
-                        (
-                          o,
-                          i
-                        ) => (
-                          <div
-                            key={
-                              i
-                            }
-                            className="rounded-2xl border p-4"
-                          >
-                            <div className="flex gap-4 items-start">
+                  <div className="space-y-4">
 
-                              {o.imageUrl && (
-                                <img
-                                  src={
-                                    o.imageUrl
-                                  }
-                                  alt=""
-                                  className="w-24 h-24 rounded-xl object-cover border"
-                                />
-                              )}
+                    {/* ================= SIMPLE ================= */}
+                    {Array.isArray(selected.payload.options) &&
+                      selected.payload.options.length > 0 && (
+                        <div className="space-y-3">
+                          {selected.payload.options.map((o, i) => (
+                            <div
+                              key={i}
+                                className="rounded-2xl border p-4"
+                            >
+                              <div className="flex gap-4 items-start">
 
-                              <div>
-                                <div className="font-bold">
-                                  {
-                                    o.text
-                                  }
+                                {o.imageUrl && (
+                                  <img
+                                    src={o.imageUrl}
+                                    alt=""
+                                    className="w-24 h-24 rounded-xl object-cover border"
+                                  />
+                                )}
+
+                                <div>
+                                  <div className="font-bold">
+                                    {o.text}
+                                  </div>
+
+                                  {o.description && (
+                                    <div className="text-sm text-slate-500 mt-1">
+                                      {o.description}
+                                    </div>
+                                  )}
                                 </div>
 
-                                {o.description && (
-                                  <div className="text-sm text-slate-500 mt-1">
-                                    {
-                                      o.description
-                                    }
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                    {/* ================= COMPOUND ================= */}
+                    {Array.isArray(selected.payload.sections) &&
+                      selected.payload.sections.length > 0 && (
+                        <div className="space-y-5">
+
+                          {selected.payload.sections.map((sec, i) => (
+                            <div
+                            key={i}
+                              className="rounded-2xl border p-4"
+                            >
+
+                              <div className="font-bold mb-3">
+                                {sec.title}
+                              </div>
+
+                              <div className="space-y-3">
+                                {sec.options.map((o, j) => (
+                                  <div
+                                    key={j}
+                                    className="rounded-xl border p-3"
+                                  >
+                                    <div className="flex gap-4 items-start">
+
+                                      {o.imageUrl && (
+                                        <img
+                                        src={o.imageUrl}
+                                          alt=""
+                                          className="w-20 h-20 rounded-lg object-cover border"
+                                        />
+                                      )}
+
+                                      <div>
+                                        <div className="font-semibold">
+                                          {o.text}
+                                        </div>
+
+                                        {o.description && (
+                                          <div className="text-sm text-slate-500 mt-1">
+                                            {o.description}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                    </div>
                                   </div>
-                                )}
+                                ))}
                               </div>
 
                             </div>
-                          </div>
-                        )
-                      )
-                    ) : (
-                      <div className="text-slate-500">
-                        No hay opciones.
-                      </div>
+                          ))}
+
+                        </div>
                     )}
+
+                    {/* ================= FALLBACK ================= */}
+                    {!selected.payload.options &&
+                      !selected.payload.sections && (
+                        <div className="text-slate-500">
+                          No hay opciones.
+                        </div>
+                    )}
+
                   </div>
 
                 </div>
