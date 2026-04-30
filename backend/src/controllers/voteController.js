@@ -404,7 +404,8 @@ async function getPublicResults(req, res) {
       type: election.type,
       totalVotes,
       sections,
-      isClosed
+      isClosed,
+      updatedAt: election.updatedAt
     });
 
   } catch (error) {

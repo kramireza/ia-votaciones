@@ -236,11 +236,6 @@ export default function PublicResults() {
                 ← Volver
               </button>
 
-              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Actualización automática cada 10s
-              </div>
-
               <h1 className="mt-4 text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
                 Dashboard Electoral
               </h1>
@@ -257,6 +252,11 @@ export default function PublicResults() {
 
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 {now.toLocaleTimeString()}
+
+                <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Actualización automática cada 10s
+                </div>
               </div>
             </div>
 
@@ -291,9 +291,9 @@ export default function PublicResults() {
               </div>
 
               <div className="text-lg font-bold">
-                {new Date(
-                  data.updatedAt
-                ).toLocaleTimeString()}
+                {data.updatedAt
+                  ? new Date(data.updatedAt).toLocaleTimeString()
+                  : "Sin actualizar"}
               </div>
             </div>
 
