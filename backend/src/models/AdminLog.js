@@ -66,7 +66,7 @@ const AdminLog = sequelize.define("AdminLog", {
   }
 
 }, {
-  tableName: "admin_logs",
+  tableName: "AdminLogs",
   timestamps: true, // 👈 importante para auditoría
   indexes: [
     {
