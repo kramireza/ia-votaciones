@@ -703,7 +703,7 @@ export default function ElectionsPanel({ token }) {
                   className="bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4"
                 >
                   <input
-                    className="w-full border rounded-xl px-4 py-3 mb-3"
+                    className="w-full border rounded-xl px-4 py-3 mb-3 bg-white text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                     value={sec.title}
                     placeholder="Título de sección"
                     onChange={(e) =>
@@ -961,7 +961,7 @@ export default function ElectionsPanel({ token }) {
                     className="bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4"
                   >
                     <input
-                      className="w-full border rounded-xl px-4 py-3 mb-3"
+                      className="w-full border rounded-xl px-4 py-3 mb-3 bg-white text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                       value={opt.text}
                       placeholder="Opción"
                       onChange={(e) =>
@@ -975,7 +975,7 @@ export default function ElectionsPanel({ token }) {
 
                     <textarea
                       rows="2"
-                      className="w-full border rounded-xl px-4 py-3 mb-3"
+                      className="w-full border rounded-xl px-4 py-3 mb-3 bg-white text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                       value={opt.description}
                       placeholder="Descripción"
                       onChange={(e) =>
@@ -1029,10 +1029,10 @@ export default function ElectionsPanel({ token }) {
                 {editSections.map((sec, i) => (
                   <div
                     key={i}
-                    className="bg-slate-50 border rounded-2xl p-4"
+                    className="bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4"
                   >
                     <input
-                      className="w-full border rounded-xl px-4 py-3 mb-3"
+                      className="w-full border rounded-xl px-4 py-3 mb-3 bg-white text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                       value={sec.title}
                       placeholder="Título de sección"
                       onChange={(e) =>
@@ -1064,7 +1064,7 @@ export default function ElectionsPanel({ token }) {
 
                         <textarea
                           rows="2"
-                          className="w-full border rounded-xl px-4 py-3 mb-2"
+                          className="w-full border rounded-xl px-4 py-3 mb-2 bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                           value={opt.description}
                           placeholder="Descripción"
                           onChange={(e) =>
@@ -1188,7 +1188,7 @@ export default function ElectionsPanel({ token }) {
                 será cerrada.
               </p>
 
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-gray-600 dark:text-slate-400">
                 Se abrirá:
                 <br />
                 <strong>

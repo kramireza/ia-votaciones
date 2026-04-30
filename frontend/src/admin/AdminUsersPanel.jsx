@@ -32,7 +32,9 @@ export default function AdminUsersPanel({
     useState(null);
 
   useEffect(() => {
+    if (token) {
     loadAdmins();
+    }
   }, [token]);
 
   async function loadAdmins() {
@@ -164,9 +166,9 @@ export default function AdminUsersPanel({
       </div>
 
       {/* FORM */}
-      <div className="rounded-3xl bg-white border shadow-xl p-6">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-6">
 
-        <h3 className="text-xl font-bold text-slate-900 mb-5">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5">
           Nuevo administrador
         </h3>
 
@@ -180,12 +182,12 @@ export default function AdminUsersPanel({
           <div className="grid md:grid-cols-2 gap-4">
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Usuario
               </label>
 
               <input
-                className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition"
+                className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 placeholder="Usuario"
                 value={
                   username
@@ -203,12 +205,12 @@ export default function AdminUsersPanel({
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 Contraseña
               </label>
 
               <input
-                className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition"
+                className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 type="password"
                 placeholder="Contraseña"
                 value={
@@ -229,12 +231,12 @@ export default function AdminUsersPanel({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
               Rol
             </label>
 
             <select
-              className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition"
+              className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               value={role}
               onChange={(
                 e
@@ -270,10 +272,10 @@ export default function AdminUsersPanel({
       </div>
 
       {/* TABLE */}
-      <div className="rounded-3xl bg-white border shadow-xl overflow-hidden">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl overflow-hidden">
 
-        <div className="p-5 border-b">
-          <h3 className="text-xl font-bold text-slate-900">
+        <div className="p-5 border-b dark:border-slate-800">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
             Administradores existentes
           </h3>
         </div>
@@ -282,19 +284,19 @@ export default function AdminUsersPanel({
           <div className="p-10 text-center">
             <div className="w-10 h-10 mx-auto rounded-full border-b-4 border-indigo-600 animate-spin"></div>
 
-            <p className="mt-4 text-slate-500">
+            <p className="mt-4 text-slate-500 dark:text-slate-400">
               Cargando administradores...
             </p>
           </div>
         ) : admins.length === 0 ? (
-          <div className="p-10 text-center text-slate-500">
+          <div className="p-10 text-center text-slate-500 dark:text-slate-400">
             No hay administradores registrados.
           </div>
         ) : (
           <div className="overflow-auto">
             <table className="w-full min-w-[720px] text-sm">
 
-              <thead className="bg-slate-50">
+              <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
                   <th className="p-4 text-left">
                     Usuario
@@ -320,13 +322,13 @@ export default function AdminUsersPanel({
                       key={
                         a.id
                       }
-                      className={`border-t hover:bg-slate-50 transition ${
+                      className={`border-t dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition ${
                         i % 2 === 0
-                          ? "bg-white"
-                          : "bg-slate-50/50"
+                          ? "bg-white dark:bg-slate-900"
+                          : "bg-slate-50/50 dark:bg-slate-800/40"
                       }`}
                     >
-                      <td className="p-4 font-semibold text-slate-800">
+                      <td className="p-4 font-semibold text-slate-800 dark:text-white">
                         {
                           a.username
                         }
@@ -337,8 +339,8 @@ export default function AdminUsersPanel({
                           className={`px-3 py-1 rounded-full text-xs font-bold ${
                             a.role ===
                             "superadmin"
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
                           }`}
                         >
                           {a.role ===
@@ -386,8 +388,8 @@ export default function AdminUsersPanel({
           className={`rounded-2xl px-4 py-3 border text-sm font-medium ${
             msg.type ===
             "error"
-              ? "bg-red-50 text-red-700 border-red-200"
-              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30"
+              : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30"
           }`}
         >
           {msg.text}

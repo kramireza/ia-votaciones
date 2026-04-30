@@ -108,7 +108,7 @@ export default function AdminLogsPanel({
         "eliminar"
       )
     ) {
-      return "bg-red-100 text-red-700";
+      return "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300";
     }
 
     if (
@@ -119,7 +119,7 @@ export default function AdminLogsPanel({
         "crear"
       )
     ) {
-      return "bg-emerald-100 text-emerald-700";
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300";
     }
 
     if (
@@ -133,10 +133,10 @@ export default function AdminLogsPanel({
         "editar"
       )
     ) {
-      return "bg-amber-100 text-amber-700";
+      return "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300";
     }
 
-    return "bg-indigo-100 text-indigo-700";
+    return "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300";
   }
 
   return (
@@ -161,32 +161,32 @@ export default function AdminLogsPanel({
       {/* STATS */}
       <div className="grid md:grid-cols-3 gap-4">
 
-        <div className="rounded-2xl bg-white border shadow p-5">
-          <div className="text-sm text-slate-500">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow p-5">
+          <div className="text-sm text-slate-500 dark:text-slate-400">
             Total logs
           </div>
 
-          <div className="text-3xl font-black mt-1">
+          <div className="text-3xl font-black mt-1 text-slate-900 dark:text-white">
             {logs.length}
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white border shadow p-5">
-          <div className="text-sm text-slate-500">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow p-5">
+          <div className="text-sm text-slate-500 dark:text-slate-400">
             Página actual
           </div>
 
-          <div className="text-3xl font-black mt-1">
+          <div className="text-3xl font-black mt-1 text-slate-900 dark:text-white">
             {page}
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white border shadow p-5">
-          <div className="text-sm text-slate-500">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow p-5">
+          <div className="text-sm text-slate-500 dark:text-slate-400">
             Total páginas
           </div>
 
-          <div className="text-3xl font-black mt-1">
+          <div className="text-3xl font-black mt-1 text-slate-900 dark:text-white">
             {totalPages}
           </div>
         </div>
@@ -194,10 +194,10 @@ export default function AdminLogsPanel({
       </div>
 
       {/* TABLE */}
-      <div className="rounded-3xl bg-white border shadow-xl overflow-hidden">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl overflow-hidden">
 
-        <div className="p-5 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <h3 className="text-xl font-bold text-slate-900">
+        <div className="p-5 border-b dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
             Logs recientes
           </h3>
 
@@ -205,7 +205,7 @@ export default function AdminLogsPanel({
             onClick={
               loadLogs
             }
-            className="px-4 py-2 rounded-xl border font-semibold hover:bg-slate-50 transition"
+            className="px-4 py-2 rounded-xl border font-semibold hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition"
           >
             🔄 Recargar
           </button>
@@ -215,20 +215,20 @@ export default function AdminLogsPanel({
           <div className="p-10 text-center">
             <div className="w-10 h-10 mx-auto rounded-full border-b-4 border-slate-800 animate-spin"></div>
 
-            <p className="mt-4 text-slate-500">
+            <p className="mt-4 text-slate-500 dark:text-slate-400">
               Cargando logs...
             </p>
           </div>
         ) : logs.length ===
           0 ? (
-          <div className="p-10 text-center text-slate-500">
+          <div className="p-10 text-center text-slate-500 dark:text-slate-400">
             No hay registros disponibles.
           </div>
         ) : (
           <div className="overflow-auto">
             <table className="w-full min-w-[980px] text-sm">
 
-              <thead className="bg-slate-50">
+              <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
                   <th className="p-4 text-left">
                     Fecha
@@ -258,10 +258,10 @@ export default function AdminLogsPanel({
                       key={
                         l.id
                       }
-                      className={`border-t hover:bg-slate-50 transition ${
+                      className={`border-t dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition ${
                         i % 2 === 0
-                          ? "bg-white"
-                          : "bg-slate-50/50"
+                          ? "bg-white dark:bg-slate-900"
+                          : "bg-slate-50/50 dark:bg-slate-800/40"
                       }`}
                     >
                       <td className="p-4 whitespace-nowrap">
@@ -270,7 +270,7 @@ export default function AdminLogsPanel({
                         ).toLocaleString()}
                       </td>
 
-                      <td className="p-4 font-semibold text-slate-800">
+                      <td className="p-4 font-semibold text-slate-800 dark:text-white">
                         {
                           l.adminUsername
                         }
@@ -288,7 +288,7 @@ export default function AdminLogsPanel({
                         </span>
                       </td>
 
-                      <td className="p-4 text-slate-600">
+                      <td className="p-4 text-slate-600 dark:text-slate-400">
                         {
                           l.details
                         }
@@ -308,7 +308,7 @@ export default function AdminLogsPanel({
             0 && (
             <div className="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
 
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Mostrando{" "}
                 {
                   paginatedLogs.length
@@ -339,7 +339,7 @@ export default function AdminLogsPanel({
                     page ===
                     1
                   }
-                  className="px-4 py-2 rounded-xl border font-semibold disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl border font-semibold disabled:opacity-50 dark:border-slate-700 dark:text-slate-200"
                 >
                   ← Anterior
                 </button>
@@ -367,7 +367,7 @@ export default function AdminLogsPanel({
                     page ===
                     totalPages
                   }
-                  className="px-4 py-2 rounded-xl border font-semibold disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl border font-semibold disabled:opacity-50 dark:border-slate-700 dark:text-slate-200"
                 >
                   Siguiente →
                 </button>
@@ -384,8 +384,8 @@ export default function AdminLogsPanel({
           className={`rounded-2xl px-4 py-3 border text-sm font-medium ${
             msg.type ===
             "error"
-              ? "bg-red-50 text-red-700 border-red-200"
-              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30"
+              : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30"
           }`}
         >
           {msg.text}

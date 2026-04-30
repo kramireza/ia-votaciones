@@ -81,7 +81,7 @@ export default function StudentsPanel({
       </div>
 
       {/* UPLOAD CARD */}
-      <div className="rounded-3xl bg-white border shadow-xl p-6 space-y-6">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-6 space-y-6">
 
         <form
           onSubmit={uploadCSV}
@@ -101,19 +101,19 @@ export default function StudentsPanel({
               className="hidden"
             />
 
-            <div className="rounded-2xl border-2 border-dashed border-slate-300 p-8 text-center hover:border-indigo-500 hover:bg-indigo-50 transition">
+            <div className="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-8 text-center hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition">
 
               <div className="text-4xl mb-3">
                 📄
               </div>
 
-              <div className="font-bold text-slate-800">
+              <div className="font-bold text-slate-800 dark:text-white">
                 {csvFile
                   ? csvFile.name
                   : "Selecciona o arrastra tu archivo CSV"}
               </div>
 
-              <div className="text-sm text-slate-500 mt-2">
+              <div className="text-sm text-slate-500 mt-2 dark:text-slate-400">
                 Solo archivos .csv
               </div>
 
@@ -121,8 +121,8 @@ export default function StudentsPanel({
           </label>
 
           {/* HELP */}
-          <div className="rounded-2xl bg-slate-50 border p-4 text-sm text-slate-600">
-            <div className="font-semibold text-slate-800 mb-2">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 p-4 text-sm text-slate-600 dark:text-slate-300">
+            <div className="font-semibold text-slate-800 dark:text-white mb-2">
               Formato recomendado:
             </div>
 
@@ -164,7 +164,7 @@ export default function StudentsPanel({
                   null
                 );
               }}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl border font-semibold hover:bg-slate-50 transition disabled:opacity-60"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl border font-semibold hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition disabled:opacity-60"
             >
               Limpiar
             </button>
@@ -180,8 +180,8 @@ export default function StudentsPanel({
           className={`rounded-2xl px-4 py-3 border text-sm font-medium ${
             msg.type ===
             "error"
-              ? "bg-red-50 text-red-700 border-red-200"
-              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30"
+              : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30"
           }`}
         >
           {msg.text}

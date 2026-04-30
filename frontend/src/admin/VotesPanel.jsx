@@ -118,10 +118,10 @@ export default function VotesPanel({
       </div>
 
       {/* TABLE */}
-      <div className="rounded-3xl bg-white border shadow-xl overflow-hidden">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl overflow-hidden">
 
-        <div className="p-5 border-b">
-          <h3 className="text-lg font-bold text-slate-900">
+        <div className="p-5 border-b dark:border-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             Elecciones disponibles
           </h3>
         </div>
@@ -130,19 +130,19 @@ export default function VotesPanel({
           <div className="p-10 text-center">
             <div className="w-10 h-10 mx-auto rounded-full border-b-4 border-red-600 animate-spin"></div>
 
-            <p className="mt-4 text-slate-500">
+            <p className="mt-4 text-slate-500 dark:text-slate-400">
               Cargando elecciones...
             </p>
           </div>
         ) : elections.length === 0 ? (
-          <div className="p-10 text-center text-slate-500">
+          <div className="p-10 text-center text-slate-500 dark:text-slate-400">
             No hay elecciones registradas.
           </div>
         ) : (
           <div className="overflow-auto">
             <table className="w-full min-w-[760px] text-sm">
 
-              <thead className="bg-slate-50">
+              <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
                   <th className="p-4 text-left font-bold">
                     Poll ID
@@ -169,19 +169,19 @@ export default function VotesPanel({
                       key={
                         e.pollId
                       }
-                      className={`border-t hover:bg-slate-50 transition ${
+                      className={`border-t dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition ${
                         i % 2 === 0
-                          ? "bg-white"
-                          : "bg-slate-50/50"
+                          ? "bg-white dark:bg-slate-900"
+                          : "bg-slate-50/50 dark:bg-slate-800/40"
                       }`}
                     >
-                      <td className="p-4 font-mono text-xs">
+                      <td className="p-4 font-mono text-xs text-slate-700 dark:text-slate-300">
                         {
                           e.pollId
                         }
                       </td>
 
-                      <td className="p-4 font-semibold text-slate-800">
+                      <td className="p-4 font-semibold text-slate-800 dark:text-white">
                         {
                           e.title
                         }
@@ -192,8 +192,8 @@ export default function VotesPanel({
                           className={`px-3 py-1 rounded-full text-xs font-bold ${
                             e.status ===
                             "open"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-slate-200 text-slate-700"
+                              ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300"
+                              : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
                           }`}
                         >
                           {e.status ===
@@ -238,8 +238,8 @@ export default function VotesPanel({
           className={`rounded-2xl px-4 py-3 border text-sm font-medium ${
             msg.type ===
             "error"
-              ? "bg-red-50 text-red-700 border-red-200"
-              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30"
+              : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30"
           }`}
         >
           {msg.text}

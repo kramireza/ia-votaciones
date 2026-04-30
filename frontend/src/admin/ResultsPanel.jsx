@@ -145,9 +145,9 @@ export default function ResultsPanel({ token }) {
 
   if (loading) {
     return (
-      <div className="rounded-3xl bg-white border shadow-xl p-10 text-center">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-10 text-center">
         <div className="w-12 h-12 mx-auto rounded-full border-b-4 border-indigo-600 animate-spin"></div>
-        <p className="mt-4 text-slate-500">
+        <p className="mt-4 text-slate-500 dark:text-slate-400">
           Cargando resultados...
         </p>
       </div>
@@ -173,15 +173,15 @@ export default function ResultsPanel({ token }) {
       </div>
 
       {/* ACTION BAR */}
-      <div className="rounded-3xl bg-white border shadow-xl p-6 space-y-5">
+      <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-6 space-y-5">
 
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
             Seleccionar elección
           </label>
 
           <select
-            className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition"
+            className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             value={selectedId}
             onChange={(e) =>
               setSelectedId(e.target.value)
@@ -222,7 +222,7 @@ export default function ResultsPanel({ token }) {
 
           <button
             onClick={loadResults}
-            className="px-5 py-3 rounded-xl border font-semibold hover:bg-slate-50 transition"
+            className="px-5 py-3 rounded-xl border font-semibold hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition"
           >
             🔄 Recargar
           </button>
@@ -231,7 +231,7 @@ export default function ResultsPanel({ token }) {
       </div>
 
       {!selected && (
-        <div className="rounded-3xl bg-white border shadow-xl p-10 text-center text-slate-500">
+        <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-10 text-center text-slate-500 dark:text-slate-400">
           No hay resultados disponibles.
         </div>
       )}
@@ -241,8 +241,8 @@ export default function ResultsPanel({ token }) {
           {/* KPIs */}
           <div className="grid md:grid-cols-4 gap-4">
 
-            <div className="rounded-2xl bg-white border shadow p-5 hover:-translate-y-1 transition">
-              <div className="text-sm text-slate-500">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow p-5 hover:-translate-y-1 transition">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Poll ID
               </div>
               <div className="font-mono text-xs mt-2 break-all">
@@ -250,17 +250,17 @@ export default function ResultsPanel({ token }) {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white border shadow p-5 hover:-translate-y-1 transition">
-              <div className="text-sm text-slate-500">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow p-5 hover:-translate-y-1 transition">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Tipo
               </div>
-              <div className="text-xl font-black mt-2 capitalize">
+              <div className="text-xl font-black mt-2 capitalize text-slate-900 dark:text-white">
                 {selected.type || "simple"}
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white border shadow p-5 hover:-translate-y-1 transition">
-              <div className="text-sm text-slate-500">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow p-5 hover:-translate-y-1 transition">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Estado
               </div>
 
@@ -268,8 +268,8 @@ export default function ResultsPanel({ token }) {
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold ${
                     selected.status === "open"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
+                      ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300"
+                      : "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300"
                   }`}
                 >
                   {selected.status === "open"
@@ -279,11 +279,11 @@ export default function ResultsPanel({ token }) {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white border shadow p-5 hover:-translate-y-1 transition">
-              <div className="text-sm text-slate-500">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow p-5 hover:-translate-y-1 transition">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Total votos
               </div>
-              <div className="text-3xl font-black mt-2">
+              <div className="text-3xl font-black mt-2 text-slate-900 dark:text-white">
                 {selected.totalVotes || 0}
               </div>
             </div>
@@ -291,8 +291,8 @@ export default function ResultsPanel({ token }) {
           </div>
 
           {/* TITLE */}
-          <div className="rounded-3xl bg-white border shadow-xl p-6">
-            <h3 className="text-2xl font-black text-slate-900">
+          <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-6">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
               {selected.title}
             </h3>
           </div>
@@ -300,7 +300,7 @@ export default function ResultsPanel({ token }) {
           {/* SIMPLE */}
           {(selected.type || "simple") === "simple" && (
             <>
-              <div className="rounded-3xl bg-white border shadow-xl p-6">
+              <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-6">
                 <h4 className="text-lg font-bold mb-5">
                   Gráfica General
                 </h4>
@@ -329,7 +329,7 @@ export default function ResultsPanel({ token }) {
                 <div className="overflow-auto">
                   <table className="w-full min-w-[760px]">
 
-                    <thead className="bg-slate-50">
+                    <thead className="bg-slate-50 dark:bg-slate-800">
                       <tr>
                         <th className="p-4 text-left">
                           Opción
@@ -350,10 +350,10 @@ export default function ResultsPanel({ token }) {
                       {selected.options?.map((opt, i) => (
                         <tr
                           key={i}
-                          className={`border-t hover:bg-slate-50 transition ${
+                          className={`border-t dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition ${
                             i % 2 === 0
-                              ? "bg-white"
-                              : "bg-slate-50/50"
+                              ? "bg-white dark:bg-slate-900"
+                              : "bg-slate-50/50 dark:bg-slate-800/40"
                           }`}
                         >
                           <td className="p-4">
@@ -384,7 +384,7 @@ export default function ResultsPanel({ token }) {
                           </td>
 
                           <td className="p-4 w-[320px]">
-                            <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                               <div
                                 className="h-3 bg-indigo-600 rounded-full"
                                 style={{
@@ -457,7 +457,7 @@ export default function ResultsPanel({ token }) {
                           {section.title}
                         </h4>
 
-                        <p className="text-sm text-slate-500 mt-1">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                           Total votos: {totalSectionVotes}
                         </p>
                       </div>
@@ -485,7 +485,7 @@ export default function ResultsPanel({ token }) {
                     <div className="overflow-auto">
                       <table className="w-full min-w-[760px]">
 
-                        <thead className="bg-slate-50">
+                        <thead className="bg-slate-50 dark:bg-slate-800">
                           <tr>
                             <th className="p-4 text-left">
                               Opción
@@ -506,10 +506,10 @@ export default function ResultsPanel({ token }) {
                           {section.options?.map((opt, j) => (
                             <tr
                               key={j}
-                              className={`border-t hover:bg-slate-50 transition ${
+                              className={`border-t dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition ${
                                 j % 2 === 0
-                                  ? "bg-white"
-                                  : "bg-slate-50/50"
+                                  ? "bg-white dark:bg-slate-900"
+                                  : "bg-slate-50/50 dark:bg-slate-800/40"
                               }`}
                             >
                               <td className="p-4">
@@ -540,7 +540,7 @@ export default function ResultsPanel({ token }) {
                               </td>
 
                               <td className="p-4 w-[320px]">
-                                <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                                <div className="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                                   <div
                                     className="h-3 bg-indigo-600 rounded-full"
                                     style={{
