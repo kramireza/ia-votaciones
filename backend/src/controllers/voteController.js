@@ -64,7 +64,6 @@ async function castVote(req, res) {
         studentCenter,
         pollId,
         option,
-        section: null
       });
 
       return res.json({
@@ -101,7 +100,6 @@ async function castVote(req, res) {
             where: {
               pollId,
               studentAccount,
-              section: section.title
             }
           });
 
@@ -118,7 +116,6 @@ async function castVote(req, res) {
           studentCenter,
           pollId,
           option: answers[sec.title],
-          section: sec.title
         }));
 
         const created = await Vote.bulkCreate(votesToInsert);
@@ -146,7 +143,6 @@ async function castVote(req, res) {
         studentCenter,
         pollId,
         option: JSON.stringify(answers),
-        section: null
       });
 
       return res.json({
