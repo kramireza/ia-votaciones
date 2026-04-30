@@ -66,9 +66,10 @@ const AdminLog = sequelize.define("AdminLog", {
 
 }, {
   tableName: "AdminLogs",
-  timestamps: true
+  freezeTableName: true,
+  timestamps: true,
+  quoteIdentifiers: true
 
-  // ❌ ELIMINAMOS indexes COMPLETAMENTE
 });
 
 module.exports = AdminLog;
