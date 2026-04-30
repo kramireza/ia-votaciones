@@ -421,24 +421,30 @@ async function getPublicResults(req, res) {
 // ============================================================
 async function checkVote(req, res) {
   try {
-    const {
-      pollId,
-      studentAccount
-    } = req.query;
+    let { pollId, studentAccount } = req.query;
 
-    const existing =
-      await Vote.findAll({
-        where: {
-          pollId,
-          studentAccount
-        }
-      });
+    // 🔐 limpieza
+    pollId = String(pollId || "").trim();
+    studentAccount = String(studentAccount || "").trim();
+
+    if (!pollId || !studentAccount) {
+      return res.json({ hasVoted: false });
+    }
+
+    const existing = await Vote.findOne({
+      where: {
+        pollId,
+        studentAccount
+      }
+    });
 
     return res.json({
       hasVoted: !!existing
     });
 
   } catch (error) {
+    console.error("ERROR checkVote:", error);
+
     return res.json({
       hasVoted: false
     });
