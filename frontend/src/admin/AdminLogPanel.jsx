@@ -17,80 +17,41 @@ export default function AdminLogsPanel({
   const [msg, setMsg] =
     useState(null);
 
-  const [page, setPage] =
-    useState(1);
-
-  const perPage = 10;
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
 
   useEffect(() => {
-    loadLogs();
-  }, [token]);
+    loadLogs(page);
+  }, [token, page]);
 
-  async function loadLogs() {
+  async function loadLogs(currentPage = 1) {
     try {
       setLoading(true);
       setMsg(null);
 
-      const res =
-        await api.getLogs(
-          token
-        );
+      const res = await api.getLogs(token, currentPage);
 
       setLogs(
-        Array.isArray(
-          res.data.data
-        )
+        Array.isArray(res.data.data)
           ? res.data.data
           : []
       );
 
+      setTotal(res.data.total || 0);
+      setPages(res.data.pages || 1);
+      setPage(res.data.page || 1);
+
     } catch {
       setMsg({
         type: "error",
-        text:
-          "No se pudieron cargar los logs."
+        text: "No se pudieron cargar los logs."
       });
 
     } finally {
       setLoading(false);
     }
   }
-
-  const totalPages =
-    Math.max(
-      1,
-      Math.ceil(
-        logs.length /
-          perPage
-      )
-    );
-
-  const paginatedLogs =
-    useMemo(() => {
-      const start =
-        (page - 1) *
-        perPage;
-
-      return logs.slice(
-        start,
-        start +
-          perPage
-      );
-    }, [logs, page]);
-
-  useEffect(() => {
-    if (
-      page >
-      totalPages
-    ) {
-      setPage(
-        totalPages
-      );
-    }
-  }, [
-    totalPages,
-    page
-  ]);
 
   function actionBadge(
     action
@@ -167,7 +128,7 @@ export default function AdminLogsPanel({
           </div>
 
           <div className="text-3xl font-black mt-1 text-slate-900 dark:text-white">
-            {logs.length}
+            {total}
           </div>
         </div>
 
@@ -187,7 +148,7 @@ export default function AdminLogsPanel({
           </div>
 
           <div className="text-3xl font-black mt-1 text-slate-900 dark:text-white">
-            {totalPages}
+            {pages}
           </div>
         </div>
 
@@ -203,7 +164,7 @@ export default function AdminLogsPanel({
 
           <button
             onClick={
-              loadLogs
+              () => loadLogs(page)
             }
             className="px-4 py-2 rounded-xl border font-semibold hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition"
           >
@@ -249,7 +210,7 @@ export default function AdminLogsPanel({
               </thead>
 
               <tbody>
-                {paginatedLogs.map(
+                {logs.map(
                   (
                     l,
                     i
@@ -310,13 +271,9 @@ export default function AdminLogsPanel({
 
               <div className="text-sm text-slate-500 dark:text-slate-400">
                 Mostrando{" "}
-                {
-                  paginatedLogs.length
-                }{" "}
+                {logs.length}{" "}
                 de{" "}
-                {
-                  logs.length
-                }{" "}
+                {total}{" "}
                 registros
               </div>
 
@@ -357,9 +314,7 @@ export default function AdminLogsPanel({
                         p
                       ) =>
                         Math.min(
-                          totalPages,
-                          p +
-                            1
+                          pages, p + 1
                         )
                     )
                   }

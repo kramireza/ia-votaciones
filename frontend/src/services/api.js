@@ -303,17 +303,12 @@ export default {
       }
     ),
 
-  getLogs: (
-    token
-  ) =>
-    api.get(
-      `/admin-logs`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+  getLogs: (token, page = 1) =>
+    api.get(`/admin-logs?page=${page}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    ),
+    }),
 
   getDetailedResults: (
     pollId,
