@@ -320,7 +320,7 @@ export default function AdminLogsPanel({
                   }
                   disabled={
                     page ===
-                    totalPages
+                    pages
                   }
                   className="px-4 py-2 rounded-xl border font-semibold disabled:opacity-50 dark:border-slate-700 dark:text-slate-200"
                 >
