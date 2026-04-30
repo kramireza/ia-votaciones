@@ -73,7 +73,7 @@ const Vote = sequelize.define("Vote", {
     // 🔥 CLAVE PARA COMPOUND
     {
       unique: true,
-      fields: ["studentAccount", "pollId", "section"]
+      fields: ["studentAccount", "pollId"]
     }
   ]
 });
