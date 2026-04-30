@@ -40,17 +40,19 @@ async function castVote(req, res) {
 
     const type = election.type || "simple";
 
+    // 🔒 VALIDACIÓN GLOBAL (EVITA DOBLE VOTO)
+    const existing = await Vote.findOne({
+      where: { pollId, studentAccount }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "Ya votó en esta votación."
+      });
+    }
+
     // ================= SIMPLE =================
     if (type === "simple") {
-      const existing = await Vote.findOne({
-        where: { pollId, studentAccount }
-      });
-
-      if (existing) {
-        return res.status(400).json({
-          message: "Ya votó en esta votación."
-        });
-      }
 
       if (!option) {
         return res.status(400).json({
@@ -77,63 +79,6 @@ async function castVote(req, res) {
       if (!answers || typeof answers !== "object") {
         return res.status(400).json({
           message: "Respuestas inválidas."
-        });
-      }
-
-      const sections = election.sections || [];
-
-      // 🔥 NUEVO: intentar usar formato moderno (section + option)
-      let canUseNewFormat = true;
-
-      for (const section of sections) {
-        if (!answers[section.title]) {
-          canUseNewFormat = false;
-          break;
-        }
-      }
-
-      // ================= NUEVO FORMATO =================
-      if (canUseNewFormat) {
-
-        for (const section of sections) {
-          const existing = await Vote.findOne({
-            where: {
-              pollId,
-              studentAccount,
-            }
-          });
-
-          if (existing) {
-            return res.status(400).json({
-              message: `Ya votó en la sección ${section.title}`
-            });
-          }
-        }
-
-        const votesToInsert = sections.map(sec => ({
-          studentAccount,
-          studentName,
-          studentCenter,
-          pollId,
-          option: answers[sec.title],
-        }));
-
-        const created = await Vote.bulkCreate(votesToInsert);
-
-        return res.json({
-          message: "Voto registrado correctamente.",
-          votes: created
-        });
-      }
-
-      // ================= FORMATO ANTIGUO =================
-      const existing = await Vote.findOne({
-        where: { pollId, studentAccount }
-      });
-
-      if (existing) {
-        return res.status(400).json({
-          message: "Ya votó en esta votación."
         });
       }
 
@@ -257,37 +202,19 @@ async function exportResultsExcel(req, res) {
     });
 
     const rows = [];
-    const sections = election.sections || [];
-
     sections.forEach((section) => {
       section.options.forEach((opt) => {
         let count = 0;
 
         votes.forEach((v) => {
 
-          // 🔥 NUEVO FORMATO
-          if (v.section) {
-            if (
-              v.section === section.title &&
-              v.option === opt.text
-            ) {
+          try {
+            const parsed = JSON.parse(v.option);
+
+            if (parsed[section.title] === opt.text) {
               count++;
             }
-          } else {
-            // 🔥 FORMATO ANTIGUO
-            try {
-              const parsed =
-                JSON.parse(v.option);
-
-              if (
-                parsed[
-                  section.title
-                ] === opt.text
-              ) {
-                count++;
-              }
-            } catch {}
-          }
+          } catch {}
         });
 
         rows.push({
@@ -357,28 +284,13 @@ async function getDetailedVoteResults(req, res) {
 
                 votes.forEach((v) => {
 
-                  if (v.section) {
-                    if (
-                      v.section === section.title &&
-                      v.option === opt.text
-                    ) {
+                  try {
+                    const parsed = JSON.parse(v.option);
+
+                    if (parsed[section.title] === opt.text) {
                       count++;
                     }
-                  } else {
-                    try {
-                      const parsed =
-                        JSON.parse(v.option);
-
-                      if (
-                        parsed[
-                          section.title
-                        ] ===
-                        opt.text
-                      ) {
-                        count++;
-                      }
-                    } catch {}
-                  }
+                  } catch {}
 
                 });
 
@@ -463,28 +375,13 @@ async function getPublicResults(req, res) {
 
                 votes.forEach((v) => {
 
-                  if (v.section) {
-                    if (
-                      v.section === section.title &&
-                      v.option === opt.text
-                    ) {
+                  try {
+                    const parsed = JSON.parse(v.option);
+
+                    if (parsed[section.title] === opt.text) {
                       count++;
                     }
-                  } else {
-                    try {
-                      const parsed =
-                        JSON.parse(v.option);
-
-                      if (
-                        parsed[
-                          section.title
-                        ] === opt.text
-                      ) {
-                        count++;
-                      }
-                    } catch {}
-                  }
-
+                  } catch {}
                 });
 
                 return {
@@ -529,7 +426,7 @@ async function checkVote(req, res) {
       studentAccount
     } = req.query;
 
-    const votes =
+    const existing =
       await Vote.findAll({
         where: {
           pollId,
@@ -538,8 +435,7 @@ async function checkVote(req, res) {
       });
 
     return res.json({
-      hasVoted:
-        votes.length > 0
+      hasVoted: !!existing
     });
 
   } catch (error) {
@@ -581,28 +477,13 @@ async function getAllResults(req, res) {
 
                   votes.forEach((v) => {
 
-                    if (v.section) {
-                      if (
-                        v.section === section.title &&
-                        v.option === opt.text
-                      ) {
+                    try {
+                      const parsed = JSON.parse(v.option);
+
+                      if (parsed[section.title] === opt.text) {
                         count++;
                       }
-                    } else {
-                      try {
-                        const parsed =
-                          JSON.parse(v.option);
-
-                        if (
-                          parsed[
-                            section.title
-                          ] === opt.text
-                        ) {
-                          count++;
-                        }
-                      } catch {}
-                    }
-
+                    } catch {}
                   });
 
                   return {

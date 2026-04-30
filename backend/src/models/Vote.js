@@ -54,12 +54,6 @@ const Vote = sequelize.define("Vote", {
     allowNull: false
   },
 
-  // 🔥 sección (solo para compound)
-  section: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-
   timestamp: { 
     type: DataTypes.DATE, 
     defaultValue: DataTypes.NOW 
