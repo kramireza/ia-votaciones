@@ -38,9 +38,9 @@ export default function AdminLogsPanel({
 
       setLogs(
         Array.isArray(
-          res.data
+          res.data.data
         )
-          ? res.data
+          ? res.data.data
           : []
       );
 
