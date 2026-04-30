@@ -342,7 +342,7 @@ export default function ElectionsPanel({ token }) {
       setEditOptions(
         (election.options || []).map((o) => ({
           text: o.text || "",
-          imageUrl: o.imageUrl || null,
+          imageUrl: o.imageUrl || "",
           newImage: null,
           description: o.description || ""
         }))
@@ -354,7 +354,7 @@ export default function ElectionsPanel({ token }) {
           options: (sec.options || []).map((opt) => ({
             text: opt.text || "",
             description: opt.description || "",
-            imageUrl: opt.imageUrl || null,
+            imageUrl: opt.imageUrl || "",
             newImage: null
           }))
         }))
@@ -462,12 +462,12 @@ export default function ElectionsPanel({ token }) {
     if (editType === "simple") {
       const formatted = editOptions.map((o) => ({
         text: o.text,
-        imageUrl: o.imageUrl || null,
+        imageUrl: o.imageUrl || "",
         newImage: o.newImage
           ? o.newImage.name
           : null,
         description:
-          o.description?.trim() || null
+          o.description?.trim() || ""
       }));
 
       formData.append(
@@ -489,9 +489,9 @@ export default function ElectionsPanel({ token }) {
           options: sec.options.map((opt) => ({
             text: opt.text,
             description:
-              opt.description?.trim() || null,
+              opt.description?.trim() || "",
             imageUrl:
-              opt.imageUrl || null,
+              opt.imageUrl || "",
             newImage: opt.newImage
               ? opt.newImage.name
               : null
@@ -523,7 +523,11 @@ export default function ElectionsPanel({ token }) {
             formData,
             token
           );
-          alert("Solicitud enviada.");
+          
+          setMsg({
+            type: "success",
+            text: "Solicitud enviada para aprobación."
+          });
         }
       } else {
         await api.editElection(
@@ -1158,7 +1162,9 @@ export default function ElectionsPanel({ token }) {
                 onClick={saveEditChanges}
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl"
               >
-                Guardar cambios
+                {role === "editor"
+                  ? "Enviar solicitud"
+                  : "Guardar cambios"}
               </button>
             </div>
 
