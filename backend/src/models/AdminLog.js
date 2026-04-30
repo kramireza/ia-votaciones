@@ -37,13 +37,13 @@ const AdminLog = sequelize.define("AdminLog", {
     }
   },
 
-  // 🔥 NUEVO — tipo de entidad (election, admin, vote, etc)
+  // 🔥 tipo de entidad
   entity: {
     type: DataTypes.STRING(50),
     allowNull: true
   },
 
-  // 🔥 NUEVO — id de la entidad afectada
+  // 🔥 id de entidad afectada
   entityId: {
     type: DataTypes.STRING(100),
     allowNull: true
@@ -54,7 +54,6 @@ const AdminLog = sequelize.define("AdminLog", {
     allowNull: true
   },
 
-  // 🔐 Seguridad
   ipAddress: {
     type: DataTypes.STRING(50),
     allowNull: true
@@ -67,24 +66,9 @@ const AdminLog = sequelize.define("AdminLog", {
 
 }, {
   tableName: "AdminLogs",
-  timestamps: true, // 👈 importante para auditoría
-  indexes: [
-    {
-      fields: ["adminUsername"]
-    },
-    {
-      fields: ["action"]
-    },
-    {
-      fields: ["entity"]
-    },
-    {
-      fields: ["entityId"]
-    },
-    {
-      fields: ["createdAt"]
-    }
-  ]
+  timestamps: true
+
+  // ❌ ELIMINAMOS indexes COMPLETAMENTE
 });
 
 module.exports = AdminLog;
