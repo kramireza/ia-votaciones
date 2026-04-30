@@ -252,11 +252,10 @@ export default function PublicResults() {
 
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 {now.toLocaleTimeString()}
-
-                <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Actualización automática cada 10s
-                </div>
+              </div>
+              <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Actualización automática cada 10s
               </div>
             </div>
 
