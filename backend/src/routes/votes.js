@@ -16,20 +16,58 @@ const { adminAuth } = require("../middleware/authMiddleware");
 const permit = require("../middleware/permit");
 
 // ============================================================
-// PÚBLICO
+// 🔵 VALIDADORES BÁSICOS
+// ============================================================
+function validateCastVote(req, res, next) {
+  const { studentAccount, pollId } = req.body;
+
+  if (!studentAccount || !pollId) {
+    return res.status(400).json({
+      message: "Datos incompletos"
+    });
+  }
+
+  next();
+}
+
+function validateCheckVote(req, res, next) {
+  const { pollId, studentAccount } = req.query;
+
+  if (!pollId || !studentAccount) {
+    return res.status(400).json({
+      message: "Parámetros requeridos"
+    });
+  }
+
+  next();
+}
+
+// ============================================================
+// 🔵 PÚBLICO
 // ============================================================
 
 // Registrar voto
-router.post("/cast", castVote);
+router.post(
+  "/cast",
+  validateCastVote,
+  castVote
+);
 
 // Revisar si ya votó
-router.get("/check", checkVote);
+router.get(
+  "/check",
+  validateCheckVote,
+  checkVote
+);
 
 // Resultados públicos
-router.get("/public/results", getPublicResults);
+router.get(
+  "/public/results",
+  getPublicResults
+);
 
 // ============================================================
-// ADMIN
+// 🔵 ADMIN
 // ============================================================
 
 // Resultados generales admin

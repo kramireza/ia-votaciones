@@ -4,27 +4,40 @@ const fs = require("fs");
 const path = require("path");
 const logAction = require("../utils/logAction");
 
-// Crear solicitud de eliminación
+// 🔐 Sanitizador
+function cleanString(str, max = 255) {
+  return String(str || "").trim().substring(0, max);
+}
+
+// ============================================================
+// DELETE
+// ============================================================
 async function requestDeleteElection(req, res) {
   try {
     const { pollId } = req.params;
 
-    // Verificar existencia de la elección
     const election = await Election.findOne({ where: { pollId } });
-    if (!election) return res.status(404).json({ message: "Elección no encontrada" });
+    if (!election) {
+      return res.status(404).json({ message: "Elección no encontrada" });
+    }
 
     const reqObj = await ApprovalRequest.create({
       type: "delete",
       pollId,
       requestedBy: req.admin.username || (`id:${req.admin.id}`),
-      payload: null
+      payload: null,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"]
     });
 
-    await logAction(
-      req.admin,
-      "Solicitar eliminación",
-      `Solicitud ${reqObj.id} para eliminar elección ${pollId}`
-    );
+    await logAction({
+      admin: req.admin,
+      action: "request_delete",
+      entity: "election",
+      entityId: pollId,
+      details: `Solicitud ${reqObj.id}`,
+      req
+    });
 
     return res.json({
       message: "Solicitud de eliminación enviada",
@@ -37,12 +50,13 @@ async function requestDeleteElection(req, res) {
   }
 }
 
-// Crear solicitud de edición
+// ============================================================
+// EDIT
+// ============================================================
 async function requestEditElection(req, res) {
   try {
     const { pollId } = req.params;
 
-    // Verificar existencia
     const election = await Election.findOne({ where: { pollId } });
     if (!election) {
       return res.status(404).json({ message: "Elección no encontrada" });
@@ -50,107 +64,76 @@ async function requestEditElection(req, res) {
 
     let payload = {};
 
-    // ==========================
-    // CAMPOS BASE
-    // ==========================
-    const title = req.body.title;
+    const title = cleanString(req.body.title);
     const type = req.body.type || "simple";
+
+    if (!["simple", "compound"].includes(type)) {
+      return res.status(400).json({
+        message: "Tipo inválido"
+      });
+    }
 
     payload.title = title;
     payload.type = type;
 
-    // ==========================
-    // SIMPLE
-    // ==========================
+    // ================= SIMPLE =================
     if (type === "simple") {
       let options = JSON.parse(req.body.options || "[]");
 
-      // Manejo de imágenes
-      if (req.files && req.files.length > 0) {
-        let fileIndex = 0;
-
-        options = options.map(opt => {
-          if (opt.newImage && req.files[fileIndex]) {
-            opt.imageUrl = `/uploads/${req.files[fileIndex].filename}`;
-            fileIndex++;
-          }
-
-          delete opt.newImage;
-
-          return {
-            text: opt.text,
-            description: opt.description || "",
-            imageUrl: opt.imageUrl || null
-          };
+      if (!Array.isArray(options) || options.length === 0) {
+        return res.status(400).json({
+          message: "Debe enviar opciones"
         });
-      } else {
-        // Asegurar estructura aunque no haya imágenes
-        options = options.map(opt => ({
-          text: opt.text,
-          description: opt.description || "",
-          imageUrl: opt.imageUrl || null
-        }));
       }
+
+      options = options.map(opt => ({
+        text: cleanString(opt.text),
+        description: cleanString(opt.description),
+        imageUrl: opt.imageUrl || null
+      }));
 
       payload.options = options;
     }
 
-    // ==========================
-    // COMPOUND
-    // ==========================
+    // ================= COMPOUND =================
     if (type === "compound") {
       let sections = JSON.parse(req.body.sections || "[]");
 
-      if (req.files && req.files.length > 0) {
-        let fileIndex = 0;
-
-        sections = sections.map(section => ({
-          ...section,
-          options: section.options.map(opt => {
-            if (opt.newImage && req.files[fileIndex]) {
-              opt.imageUrl = `/uploads/${req.files[fileIndex].filename}`;
-              fileIndex++;
-            }
-
-            delete opt.newImage;
-
-            return {
-              text: opt.text,
-              description: opt.description || "",
-              imageUrl: opt.imageUrl || null
-            };
-          })
-        }));
-      } else {
-        // Asegurar estructura aunque no haya imágenes
-        sections = sections.map(section => ({
-          ...section,
-          options: section.options.map(opt => ({
-            text: opt.text,
-            description: opt.description || "",
-            imageUrl: opt.imageUrl || null
-          }))
-        }));
+      if (!Array.isArray(sections) || sections.length === 0) {
+        return res.status(400).json({
+          message: "Debe enviar secciones"
+        });
       }
+
+      sections = sections.map(sec => ({
+        title: cleanString(sec.title),
+        options: (sec.options || []).map(opt => ({
+          text: cleanString(opt.text),
+          description: cleanString(opt.description),
+          imageUrl: opt.imageUrl || null
+        }))
+      }));
 
       payload.sections = sections;
     }
 
-    // ==========================
-    // CREAR SOLICITUD
-    // ==========================
     const reqObj = await ApprovalRequest.create({
       type: "edit",
       pollId,
       requestedBy: req.admin.username || (`id:${req.admin.id}`),
-      payload
+      payload,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"]
     });
 
-    await logAction(
-      req.admin,
-      "Solicitar edición",
-      `Solicitud ${reqObj.id} para editar elección ${pollId}`
-    );
+    await logAction({
+      admin: req.admin,
+      action: "request_edit",
+      entity: "election",
+      entityId: pollId,
+      details: `Solicitud ${reqObj.id}`,
+      req
+    });
 
     return res.json({
       message: "Solicitud de edición enviada",
@@ -163,7 +146,49 @@ async function requestEditElection(req, res) {
   }
 }
 
-// Listar solicitudes
+// ============================================================
+// PASSWORD CHANGE (NUEVO)
+// ============================================================
+async function requestPasswordChange(req, res) {
+  try {
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Contraseña inválida"
+      });
+    }
+
+    const reqObj = await ApprovalRequest.create({
+      type: "password_change",
+      pollId: null,
+      requestedBy: req.admin.username,
+      payload: { newPassword },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"]
+    });
+
+    await logAction({
+      admin: req.admin,
+      action: "request_password_change",
+      entity: "admin",
+      details: `Solicitud ${reqObj.id}`,
+      req
+    });
+
+    res.json({
+      message: "Solicitud enviada",
+      request: reqObj
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "Error" });
+  }
+}
+
+// ============================================================
+// LIST
+// ============================================================
 async function listRequests(req, res) {
   try {
     const role = req.admin?.role;
@@ -189,7 +214,9 @@ async function listRequests(req, res) {
   }
 }
 
-// Ver solicitud
+// ============================================================
+// GET
+// ============================================================
 async function getRequest(req, res) {
   try {
     const { id } = req.params;
@@ -199,10 +226,10 @@ async function getRequest(req, res) {
       return res.status(404).json({ message: "Solicitud no encontrada" });
     }
 
-    const role = req.admin?.role;
-    const username = req.admin?.username;
-
-    if (role === "editor" && reqObj.requestedBy !== username) {
+    if (
+      req.admin.role === "editor" &&
+      reqObj.requestedBy !== req.admin.username
+    ) {
       return res.status(403).json({ message: "Permisos insuficientes" });
     }
 
@@ -214,7 +241,9 @@ async function getRequest(req, res) {
   }
 }
 
-// Aprobar solicitud
+// ============================================================
+// APPROVE
+// ============================================================
 async function approveRequest(req, res) {
   try {
     const { id } = req.params;
@@ -228,56 +257,74 @@ async function approveRequest(req, res) {
       return res.status(400).json({ message: "Solicitud ya procesada" });
     }
 
-    // ==========================
     // DELETE
-    // ==========================
     if (reqObj.type === "delete") {
       await Election.destroy({ where: { pollId: reqObj.pollId } });
 
       const Vote = require("../models/Vote");
       await Vote.destroy({ where: { pollId: reqObj.pollId } });
-
-      await logAction(
-        req.admin,
-        "Aprobar eliminación",
-        `Solicitud ${id} aprobada. Se eliminó elección ${reqObj.pollId}`
-      );
     }
 
-    // ==========================
     // EDIT
-    // ==========================
-    else if (reqObj.type === "edit") {
+    if (reqObj.type === "edit") {
       const election = await Election.findOne({
         where: { pollId: reqObj.pollId }
       });
 
       if (!election) {
         return res.status(404).json({
-          message: "Elección no encontrada al aplicar cambios"
+          message: "Elección no encontrada"
         });
       }
 
       const { title, options, sections, type } = reqObj.payload || {};
 
       if (title !== undefined) election.title = title;
-      if (options !== undefined) election.options = options;
-      if (sections !== undefined) election.sections = sections;
       if (type !== undefined) election.type = type;
 
-      await election.save();
+      if (type === "simple") {
+        election.options = options || [];
+        election.sections = [];
+      }
 
-      await logAction(
-        req.admin,
-        "Aprobar edición",
-        `Solicitud ${id} aprobada. Se aplicaron cambios a ${reqObj.pollId}`
+      if (type === "compound") {
+        election.sections = sections || [];
+        election.options = [];
+      }
+
+      await election.save();
+    }
+
+    // PASSWORD CHANGE
+    if (reqObj.type === "password_change") {
+      const Admin = require("../models/Admin");
+      const bcrypt = require("bcrypt");
+
+      const admin = await Admin.findOne({
+        where: { username: reqObj.requestedBy }
+      });
+
+      admin.passwordHash = await bcrypt.hash(
+        reqObj.payload.newPassword,
+        10
       );
+
+      await admin.save();
     }
 
     reqObj.status = "approved";
     reqObj.adminComment = req.body.comment || null;
 
     await reqObj.save();
+
+    await logAction({
+      admin: req.admin,
+      action: "approve_request",
+      entity: "approval_request",
+      entityId: id,
+      details: `Tipo: ${reqObj.type}`,
+      req
+    });
 
     return res.json({ message: "Solicitud aprobada" });
 
@@ -287,7 +334,9 @@ async function approveRequest(req, res) {
   }
 }
 
-// Rechazar solicitud
+// ============================================================
+// REJECT
+// ============================================================
 async function rejectRequest(req, res) {
   try {
     const { id } = req.params;
@@ -306,11 +355,14 @@ async function rejectRequest(req, res) {
 
     await reqObj.save();
 
-    await logAction(
-      req.admin,
-      "Rechazar solicitud",
-      `Solicitud ${id} rechazada por ${req.admin.username || req.admin.id}`
-    );
+    await logAction({
+      admin: req.admin,
+      action: "reject_request",
+      entity: "approval_request",
+      entityId: id,
+      details: "Rechazada",
+      req
+    });
 
     return res.json({ message: "Solicitud rechazada" });
 
@@ -323,6 +375,7 @@ async function rejectRequest(req, res) {
 module.exports = {
   requestDeleteElection,
   requestEditElection,
+  requestPasswordChange,
   listRequests,
   getRequest,
   approveRequest,

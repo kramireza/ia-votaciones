@@ -38,20 +38,20 @@ async function castVote(req, res) {
       });
     }
 
-    const existing = await Vote.findOne({
-      where: { pollId, studentAccount }
-    });
-
-    if (existing) {
-      return res.status(400).json({
-        message: "Ya votó en esta votación."
-      });
-    }
-
     const type = election.type || "simple";
 
-    // SIMPLE
+    // ================= SIMPLE =================
     if (type === "simple") {
+      const existing = await Vote.findOne({
+        where: { pollId, studentAccount }
+      });
+
+      if (existing) {
+        return res.status(400).json({
+          message: "Ya votó en esta votación."
+        });
+      }
+
       if (!option) {
         return res.status(400).json({
           message: "Debe seleccionar una opción."
@@ -63,7 +63,8 @@ async function castVote(req, res) {
         studentName,
         studentCenter,
         pollId,
-        option
+        option,
+        section: null
       });
 
       return res.json({
@@ -72,11 +73,70 @@ async function castVote(req, res) {
       });
     }
 
-    // COMPOUND
+    // ================= COMPOUND =================
     if (type === "compound") {
       if (!answers || typeof answers !== "object") {
         return res.status(400).json({
           message: "Respuestas inválidas."
+        });
+      }
+
+      const sections = election.sections || [];
+
+      // 🔥 NUEVO: intentar usar formato moderno (section + option)
+      let canUseNewFormat = true;
+
+      for (const section of sections) {
+        if (!answers[section.title]) {
+          canUseNewFormat = false;
+          break;
+        }
+      }
+
+      // ================= NUEVO FORMATO =================
+      if (canUseNewFormat) {
+
+        for (const section of sections) {
+          const existing = await Vote.findOne({
+            where: {
+              pollId,
+              studentAccount,
+              section: section.title
+            }
+          });
+
+          if (existing) {
+            return res.status(400).json({
+              message: `Ya votó en la sección ${section.title}`
+            });
+          }
+        }
+
+        const votesToInsert = sections.map(sec => ({
+          studentAccount,
+          studentName,
+          studentCenter,
+          pollId,
+          option: answers[sec.title],
+          section: sec.title
+        }));
+
+        const created = await Vote.bulkCreate(votesToInsert);
+
+        return res.json({
+          message: "Voto registrado correctamente.",
+          votes: created
+        });
+      }
+
+      // ================= FORMATO ANTIGUO =================
+      const existing = await Vote.findOne({
+        where: { pollId, studentAccount }
+      });
+
+      if (existing) {
+        return res.status(400).json({
+          message: "Ya votó en esta votación."
         });
       }
 
@@ -85,7 +145,8 @@ async function castVote(req, res) {
         studentName,
         studentCenter,
         pollId,
-        option: JSON.stringify(answers)
+        option: JSON.stringify(answers),
+        section: null
       });
 
       return res.json({
@@ -133,9 +194,8 @@ async function exportVotesExcel(req, res) {
   try {
     const { pollId } = req.query;
 
-    const whereClause = pollId
-      ? { pollId }
-      : {};
+    const whereClause =
+      pollId ? { pollId } : {};
 
     const votes = await Vote.findAll({
       where: whereClause,
@@ -173,7 +233,7 @@ async function exportVotesExcel(req, res) {
 }
 
 // ============================================================
-// EXPORTAR EXCEL RESULTADOS
+// EXPORTAR EXCEL RESULTADOS (HIBRIDO)
 // ============================================================
 async function exportResultsExcel(req, res) {
   try {
@@ -195,71 +255,43 @@ async function exportResultsExcel(req, res) {
       });
     }
 
-    const type = election.type || "simple";
-
-    // SIMPLE
-    if (type === "simple") {
-      const results = await Vote.findAll({
-        where: { pollId },
-        attributes: [
-          "pollId",
-          "option",
-          [
-            fn(
-              "COUNT",
-              col("option")
-            ),
-            "count"
-          ]
-        ],
-        group: ["pollId", "option"],
-        raw: true
-      });
-
-      const buffer =
-        await exportResultsToExcel(results);
-
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="resultados_${pollId}.xlsx"`
-      );
-
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-
-      return res.send(buffer);
-    }
-
-    // COMPOUND
     const votes = await Vote.findAll({
       where: { pollId },
       raw: true
     });
 
     const rows = [];
-
-    const sections =
-      election.sections || [];
+    const sections = election.sections || [];
 
     sections.forEach((section) => {
       section.options.forEach((opt) => {
         let count = 0;
 
         votes.forEach((v) => {
-          try {
-            const parsed =
-              JSON.parse(v.option);
 
+          // 🔥 NUEVO FORMATO
+          if (v.section) {
             if (
-              parsed[
-                section.title
-              ] === opt.text
+              v.section === section.title &&
+              v.option === opt.text
             ) {
               count++;
             }
-          } catch {}
+          } else {
+            // 🔥 FORMATO ANTIGUO
+            try {
+              const parsed =
+                JSON.parse(v.option);
+
+              if (
+                parsed[
+                  section.title
+                ] === opt.text
+              ) {
+                count++;
+              }
+            } catch {}
+          }
         });
 
         rows.push({
@@ -295,12 +327,9 @@ async function exportResultsExcel(req, res) {
 }
 
 // ============================================================
-// RESULTADOS DETALLADOS ADMIN
+// RESULTADOS DETALLADOS ADMIN (HIBRIDO)
 // ============================================================
-async function getDetailedVoteResults(
-  req,
-  res
-) {
+async function getDetailedVoteResults(req, res) {
   try {
     const { pollId } = req.params;
 
@@ -321,41 +350,7 @@ async function getDetailedVoteResults(
     });
 
     const totalVotes = votes.length;
-    const type =
-      election.type || "simple";
 
-    // SIMPLE
-    if (type === "simple") {
-      const options =
-        (election.options || []).map(
-          (opt) => {
-            const count =
-              votes.filter(
-                (v) =>
-                  v.option ===
-                  opt.text
-              ).length;
-
-            return {
-              text: opt.text,
-              imageUrl:
-                opt.imageUrl ||
-                null,
-              votes: count
-            };
-          }
-        );
-
-      return res.json({
-        pollId,
-        title: election.title,
-        type,
-        totalVotes,
-        options
-      });
-    }
-
-    // COMPOUND
     const sections =
       (election.sections || []).map(
         (section) => {
@@ -365,21 +360,30 @@ async function getDetailedVoteResults(
                 let count = 0;
 
                 votes.forEach((v) => {
-                  try {
-                    const parsed =
-                      JSON.parse(
-                        v.option
-                      );
 
+                  if (v.section) {
                     if (
-                      parsed[
-                        section.title
-                      ] ===
-                      opt.text
+                      v.section === section.title &&
+                      v.option === opt.text
                     ) {
                       count++;
                     }
-                  } catch {}
+                  } else {
+                    try {
+                      const parsed =
+                        JSON.parse(v.option);
+
+                      if (
+                        parsed[
+                          section.title
+                        ] ===
+                        opt.text
+                      ) {
+                        count++;
+                      }
+                    } catch {}
+                  }
+
                 });
 
                 return {
@@ -400,7 +404,7 @@ async function getDetailedVoteResults(
     return res.json({
       pollId,
       title: election.title,
-      type,
+      type: election.type,
       totalVotes,
       sections
     });
@@ -415,18 +419,13 @@ async function getDetailedVoteResults(
 }
 
 // ============================================================
-// RESULTADOS PÚBLICOS
+// RESULTADOS PÚBLICOS (HIBRIDO)
 // ============================================================
-async function getPublicResults(
-  req,
-  res
-) {
+async function getPublicResults(req, res) {
   try {
     let election =
       await Election.findOne({
-        where: {
-          status: "open"
-        }
+        where: { status: "open" }
       });
 
     let isClosed = false;
@@ -434,12 +433,7 @@ async function getPublicResults(
     if (!election) {
       election =
         await Election.findOne({
-          order: [
-            [
-              "updatedAt",
-              "DESC"
-            ]
-          ]
+          order: [["updatedAt", "DESC"]]
         });
 
       isClosed = true;
@@ -463,56 +457,6 @@ async function getPublicResults(
     const totalVotes =
       votes.length;
 
-    const type =
-      election.type || "simple";
-
-    // SIMPLE
-    if (type === "simple") {
-      const options =
-        (election.options || []).map(
-          (opt) => {
-            const count =
-              votes.filter(
-                (v) =>
-                  v.option ===
-                  opt.text
-              ).length;
-
-            return {
-              text: opt.text,
-              imageUrl:
-                opt.imageUrl ||
-                null,
-              votes: count
-            };
-          }
-        );
-
-      const ranked = [
-        ...options
-      ].sort(
-        (a, b) =>
-          b.votes - a.votes
-      );
-
-      const winner =
-        ranked[0] || null;
-
-      return res.json({
-        pollId,
-        title:
-          election.title,
-        type,
-        totalVotes,
-        updatedAt:
-          new Date(),
-        options,
-        winner,
-        isClosed
-      });
-    }
-
-    // COMPOUND
     const sections =
       (election.sections || []).map(
         (section) => {
@@ -521,52 +465,42 @@ async function getPublicResults(
               (opt) => {
                 let count = 0;
 
-                votes.forEach(
-                  (v) => {
+                votes.forEach((v) => {
+
+                  if (v.section) {
+                    if (
+                      v.section === section.title &&
+                      v.option === opt.text
+                    ) {
+                      count++;
+                    }
+                  } else {
                     try {
                       const parsed =
-                        JSON.parse(
-                          v.option
-                        );
+                        JSON.parse(v.option);
 
                       if (
                         parsed[
                           section.title
-                        ] ===
-                        opt.text
+                        ] === opt.text
                       ) {
                         count++;
                       }
                     } catch {}
                   }
-                );
+
+                });
 
                 return {
-                  text:
-                    opt.text,
+                  text: opt.text,
                   votes: count
                 };
               }
             );
 
-          const ranked = [
-            ...options
-          ].sort(
-            (
-              a,
-              b
-            ) =>
-              b.votes -
-              a.votes
-          );
-
           return {
-            title:
-              section.title,
-            options,
-            winner:
-              ranked[0] ||
-              null
+            title: section.title,
+            options
           };
         }
       );
@@ -574,10 +508,8 @@ async function getPublicResults(
     return res.json({
       pollId,
       title: election.title,
-      type,
+      type: election.type,
       totalVotes,
-      updatedAt:
-        new Date(),
       sections,
       isClosed
     });
@@ -594,27 +526,15 @@ async function getPublicResults(
 // ============================================================
 // CHECK VOTO
 // ============================================================
-async function checkVote(
-  req,
-  res
-) {
+async function checkVote(req, res) {
   try {
     const {
       pollId,
       studentAccount
     } = req.query;
 
-    if (
-      !pollId ||
-      !studentAccount
-    ) {
-      return res.json({
-        hasVoted: false
-      });
-    }
-
-    const vote =
-      await Vote.findOne({
+    const votes =
+      await Vote.findAll({
         where: {
           pollId,
           studentAccount
@@ -622,17 +542,20 @@ async function checkVote(
       });
 
     return res.json({
-      hasVoted: !!vote
+      hasVoted:
+        votes.length > 0
     });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
+    return res.json({
       hasVoted: false
     });
   }
 }
 
+// ============================================================
+// TODOS LOS RESULTADOS (HIBRIDO)
+// ============================================================
 async function getAllResults(req, res) {
   try {
     const elections = await Election.findAll({
@@ -651,69 +574,63 @@ async function getAllResults(req, res) {
       });
 
       const totalVotes = votes.length;
-      const type = election.type || "simple";
 
-      // SIMPLE
-      if (type === "simple") {
-        const options = (election.options || []).map((opt) => {
-          const count = votes.filter(
-            (v) => v.option === opt.text
-          ).length;
+      const sections =
+        (election.sections || []).map(
+          (section) => {
+            const options =
+              (section.options || []).map(
+                (opt) => {
+                  let count = 0;
 
-          return {
-            text: opt.text,
-            imageUrl: opt.imageUrl || null,
-            votes: count
-          };
-        });
+                  votes.forEach((v) => {
 
-        finalResults.push({
-          pollId,
-          title: election.title,
-          type,
-          status: election.status,
-          totalVotes,
-          options
-        });
-      }
+                    if (v.section) {
+                      if (
+                        v.section === section.title &&
+                        v.option === opt.text
+                      ) {
+                        count++;
+                      }
+                    } else {
+                      try {
+                        const parsed =
+                          JSON.parse(v.option);
 
-      // COMPOUND
-      if (type === "compound") {
-        const sections = (election.sections || []).map((section) => {
-          const options = (section.options || []).map((opt) => {
-            let count = 0;
+                        if (
+                          parsed[
+                            section.title
+                          ] === opt.text
+                        ) {
+                          count++;
+                        }
+                      } catch {}
+                    }
 
-            votes.forEach((v) => {
-              try {
-                const parsed = JSON.parse(v.option);
+                  });
 
-                if (parsed[section.title] === opt.text) {
-                  count++;
+                  return {
+                    text: opt.text,
+                    votes: count
+                  };
                 }
-              } catch {}
-            });
+              );
 
             return {
-              text: opt.text,
-              votes: count
+              title: section.title,
+              options
             };
-          });
+          }
+        );
 
-          return {
-            title: section.title,
-            options
-          };
-        });
-
-        finalResults.push({
-          pollId,
-          title: election.title,
-          type,
-          status: election.status,
-          totalVotes,
-          sections
-        });
-      }
+      finalResults.push({
+        pollId,
+        title: election.title,
+        type: election.type,
+        status: election.status,
+        totalVotes,
+        sections
+      });
     }
 
     return res.json(finalResults);

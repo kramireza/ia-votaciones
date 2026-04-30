@@ -1,58 +1,41 @@
 const fs = require("fs");
 const csv = require("csv-parser");
 const Student = require("../models/Student");
-const path = require("path");
+const logAction = require("../utils/logAction");
 
-/**
- * Detecta automáticamente el separador CSV.
- */
 function detectSeparator(headerLine) {
   if (headerLine.includes(";")) return ";";
   return ",";
 }
 
-/**
- * Limpia claves de encabezado (remove BOM, lowercase, trim)
- */
 function normalizeKey(key) {
-  return key
-    .replace(/^\uFEFF/, "") // elimina BOM
-    .trim()
-    .toLowerCase();
+  return key.replace(/^\uFEFF/, "").trim().toLowerCase();
 }
 
 async function importStudents(req, res) {
+  const filePath = req.file?.path;
 
-  // 🔵🔵🔵 LOGS IMPORTANTES PARA DETECTAR EL ERROR 🔵🔵🔵
-  console.log("📥 IMPORT STUDENTS ejecutándose...");
-  console.log("📁 req.file =", req.file);
-  console.log("📝 req.body =", req.body);
-
-  if (!req.file) {
-    console.log("❌ ERROR: No llegó archivo");
-    return res.status(400).json({ message: "No se subió ningún archivo." });
+  if (!filePath) {
+    return res.status(400).json({
+      message: "No se subió archivo"
+    });
   }
 
-  const filePath = req.file.path;
-
   try {
-    // Leer solo la primera línea para detectar el separador
     const firstLine = fs.readFileSync(filePath, "utf8").split("\n")[0];
     const separator = detectSeparator(firstLine);
 
     const results = [];
     const errors = [];
 
-    console.log("🔍 SEPARATOR DETECTED:", separator);
-
     await new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csv({ separator }))
         .on("data", (row) => {
-          // Normalizar claves
           const normalized = {};
+
           for (const key in row) {
-            normalized[normalizeKey(key)] = row[key] ? row[key].trim() : "";
+            normalized[normalizeKey(key)] = row[key]?.trim() || "";
           }
 
           const acc = normalized["accountnumber"];
@@ -60,20 +43,16 @@ async function importStudents(req, res) {
           const center = normalized["center"];
           const email = normalized["email"] || null;
 
-          // Validaciones
           if (!acc || !name || !center) {
-            errors.push({
-              row: normalized,
-              error: "Faltan campos obligatorios (accountNumber, name, center)",
-            });
+            errors.push({ row: normalized, error: "Campos faltantes" });
             return;
           }
 
           results.push({
             accountNumber: acc,
-            name: name,
-            center: center,
-            email: email,
+            name,
+            center,
+            email
           });
         })
         .on("end", resolve)
@@ -81,32 +60,44 @@ async function importStudents(req, res) {
     });
 
     if (results.length === 0) {
-      console.log("❌ ERROR: CSV vacío o inválido");
+      fs.unlinkSync(filePath);
       return res.status(400).json({
-        message: "El archivo CSV no contiene datos válidos.",
-        errores: errors,
+        message: "CSV inválido",
+        errores: errors
       });
     }
 
     await Student.bulkCreate(results, {
-      ignoreDuplicates: true,
+      ignoreDuplicates: true
     });
-
-    console.log("✅ INSERTADOS:", results.length);
-    console.log("⚠️ ERRORES:", errors.length);
 
     fs.unlinkSync(filePath);
 
+    await logAction({
+      admin: req.admin,
+      action: "import_students",
+      entity: "student",
+      details: `Importados: ${results.length}`,
+      req
+    });
+
     res.json({
-      message: "Importación completada.",
+      message: "Importación completada",
       insertados: results.length,
       errores: errors.length,
-      detallesErrores: errors,
+      detallesErrores: errors
     });
 
   } catch (err) {
-    console.error("❌ ERROR CSV:", err);
-    res.status(500).json({ message: "Error procesando CSV.", error: err });
+    console.error(err);
+
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.status(500).json({
+      message: "Error procesando CSV"
+    });
   }
 }
 

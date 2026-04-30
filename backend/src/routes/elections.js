@@ -15,25 +15,89 @@ const {
   editElection
 } = require("../controllers/electionsController");
 
-// 🔵 Ruta pública — elección activa
+// ============================================================
+// 🔵 RUTA PÚBLICA
+// ============================================================
 router.get("/active", getActiveElection);
 
-// Crear elección -> permitimos editor + superadmin
-router.post("/create", adminAuth, permit("superadmin", "editor"), upload.array("images"), createElection);
+// ============================================================
+// 🔵 CREAR ELECCIÓN
+// ============================================================
+router.post(
+  "/create",
+  adminAuth,
+  permit("superadmin", "editor"),
+  (req, res, next) => {
+    upload.array("images")(req, res, function (err) {
+      if (err) {
+        return res.status(400).json({
+          message: err.message || "Error subiendo imágenes"
+        });
+      }
+      next();
+    });
+  },
+  createElection
+);
 
-// Listar elecciones (admin/editor)
-router.get("/", adminAuth, permit("superadmin", "editor"), getElections);
+// ============================================================
+// 🔵 LISTAR
+// ============================================================
+router.get(
+  "/",
+  adminAuth,
+  permit("superadmin", "editor"),
+  getElections
+);
 
-// Cambiar estado (admin/editor)
-router.patch("/:pollId/status", adminAuth, permit("superadmin", "editor"), changeElectionStatus);
+// ============================================================
+// 🔵 CAMBIAR ESTADO
+// ============================================================
+router.patch(
+  "/:pollId/status",
+  adminAuth,
+  permit("superadmin", "editor"),
+  changeElectionStatus
+);
 
-// Editar elección (con imágenes) (admin/editor)
-router.put("/:pollId", adminAuth, permit("superadmin"), upload.array("images"), editElection);
+// ============================================================
+// 🔵 EDITAR (SOLO SUPERADMIN)
+// ============================================================
+router.put(
+  "/:pollId",
+  adminAuth,
+  permit("superadmin"),
+  (req, res, next) => {
+    upload.array("images")(req, res, function (err) {
+      if (err) {
+        return res.status(400).json({
+          message: err.message || "Error subiendo imágenes"
+        });
+      }
+      next();
+    });
+  },
+  editElection
+);
 
-// Eliminar votos -> SOLO superadmin ahora
-router.delete("/:pollId/votes", adminAuth, permit("superadmin"), deleteVotes);
+// ============================================================
+// 🔵 ELIMINAR VOTOS
+// ============================================================
+router.delete(
+  "/:pollId/votes",
+  adminAuth,
+  permit("superadmin"),
+  deleteVotes
+);
 
-// Eliminar elección (admin/editor) — si en el futuro quieres restringir, lo ajustamos
-router.delete("/:pollId", adminAuth, permit("superadmin"), deleteElection);
+// ============================================================
+// 🔵 ELIMINAR ELECCIÓN
+// ============================================================
+router.delete(
+  "/:pollId",
+  adminAuth,
+  permit("superadmin"),
+  deleteElection
+);
 
 module.exports = router;

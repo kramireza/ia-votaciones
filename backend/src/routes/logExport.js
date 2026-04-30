@@ -1,18 +1,37 @@
 const express = require("express");
 const router = express.Router();
+
 const { adminAuth } = require("../middleware/authMiddleware");
+const permit = require("../middleware/permit");
 const logAction = require("../utils/logAction");
 
-router.post("/pdf", adminAuth, (req, res) => {
-  const { pollTitle } = req.body;
+// ============================================================
+// 🔵 LOG EXPORT PDF
+// ============================================================
+router.post(
+  "/pdf",
+  adminAuth,
+  permit("superadmin", "editor"),
+  async (req, res) => {
+    try {
+      const { pollTitle } = req.body;
 
-  logAction(
-    req.admin,
-    "Exportó PDF",
-    `PDF generado de la elección: ${pollTitle}`
-  );
+      await logAction({
+        admin: req.admin,
+        action: "export_pdf",
+        entity: "election",
+        details: `PDF generado: ${pollTitle}`,
+        req
+      });
 
-  res.json({ message: "Log registrado" });
-});
+      res.json({ message: "Log registrado" });
+
+    } catch (err) {
+      res.status(500).json({
+        message: "Error registrando log"
+      });
+    }
+  }
+);
 
 module.exports = router;

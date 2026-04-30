@@ -2,8 +2,14 @@ const Election = require("../models/Election");
 const Vote = require("../models/Vote");
 const fs = require("fs");
 
-// ⭐ Logger
 const logAction = require("../utils/logAction");
+
+// 🔐 Sanitizador básico
+function cleanString(str, max = 255) {
+  return String(str || "")
+    .trim()
+    .substring(0, max);
+}
 
 // =====================================================
 // 🔵 RUTA PÚBLICA — Obtener elección activa
@@ -39,15 +45,35 @@ async function createElection(req, res) {
     let { pollId, title, type } = req.body;
 
     type = type || "simple";
+    title = cleanString(title);
 
     let options = [];
     let sections = [];
+
+    // ================= VALIDACIÓN TYPE =================
+    if (!["simple", "compound"].includes(type)) {
+      return res.status(400).json({
+        message: "Tipo de elección inválido"
+      });
+    }
 
     // ==========================================
     // SIMPLE
     // ==========================================
     if (type === "simple") {
       options = JSON.parse(req.body.options || "[]");
+
+      if (!Array.isArray(options) || options.length === 0) {
+        return res.status(400).json({
+          message: "Debe enviar al menos una opción"
+        });
+      }
+
+      options = options.map(opt => ({
+        text: cleanString(opt.text),
+        description: cleanString(opt.description),
+        imageUrl: opt.imageUrl || ""
+      }));
 
       if (req.files && req.files.length > 0) {
         req.files.forEach((file, index) => {
@@ -63,9 +89,22 @@ async function createElection(req, res) {
     // COMPOUND
     // ==========================================
     if (type === "compound") {
-      sections = JSON.parse(
-        req.body.sections || "[]"
-      );
+      sections = JSON.parse(req.body.sections || "[]");
+
+      if (!Array.isArray(sections) || sections.length === 0) {
+        return res.status(400).json({
+          message: "Debe enviar al menos una sección"
+        });
+      }
+
+      sections = sections.map(sec => ({
+        title: cleanString(sec.title),
+        options: (sec.options || []).map(opt => ({
+          text: cleanString(opt.text),
+          description: cleanString(opt.description),
+          imageUrl: opt.imageUrl || ""
+        }))
+      }));
 
       if (req.files && req.files.length > 0) {
         let fileIndex = 0;
@@ -91,7 +130,7 @@ async function createElection(req, res) {
       }
     }
 
-    if (!title || title.trim() === "") {
+    if (!title || title === "") {
       return res.status(400).json({
         message: "El título es requerido"
       });
@@ -110,11 +149,14 @@ async function createElection(req, res) {
       status: "closed"
     });
 
-    await logAction(
-      req.admin,
-      "Crear elección",
-      `Se creó la elección ${pollId} (${type}).`
-    );
+    await logAction({
+      admin: req.admin,
+      action: "create_election",
+      entity: "election",
+      entityId: pollId,
+      details: `Creación tipo ${type}`,
+      req
+    });
 
     return res.json({
       message: "Elección creada correctamente",
@@ -122,10 +164,7 @@ async function createElection(req, res) {
     });
 
   } catch (err) {
-    console.error(
-      "ERROR CREATE ELECTION:",
-      err
-    );
+    console.error("ERROR CREATE ELECTION:", err);
 
     return res.status(500).json({
       message: "Error creando elección"
@@ -138,22 +177,17 @@ async function createElection(req, res) {
 // =====================================================
 async function getElections(req, res) {
   try {
-    const elections =
-      await Election.findAll({
-        order: [["createdAt", "DESC"]]
-      });
+    const elections = await Election.findAll({
+      order: [["createdAt", "DESC"]]
+    });
 
     return res.json(elections);
 
   } catch (err) {
-    console.error(
-      "GET ELECTIONS ERROR:",
-      err
-    );
+    console.error("GET ELECTIONS ERROR:", err);
 
     return res.status(500).json({
-      message:
-        "Error obteniendo elecciones"
+      message: "Error obteniendo elecciones"
     });
   }
 }
@@ -161,179 +195,105 @@ async function getElections(req, res) {
 // =====================================================
 // 🔵 CAMBIAR ESTADO
 // =====================================================
-async function changeElectionStatus(
-  req,
-  res
-) {
+async function changeElectionStatus(req, res) {
   try {
     const { pollId } = req.params;
     const { status } = req.body;
 
-    const election =
-      await Election.findOne({
-        where: { pollId }
-      });
-
-    if (!election) {
-      return res.status(404).json({
-        message:
-          "Elección no encontrada"
+    if (!["open", "closed"].includes(status)) {
+      return res.status(400).json({
+        message: "Estado inválido"
       });
     }
 
-    // Si se abre una, cerrar otras
+    const election = await Election.findOne({
+      where: { pollId }
+    });
+
+    if (!election) {
+      return res.status(404).json({
+        message: "Elección no encontrada"
+      });
+    }
+
     if (status === "open") {
       await Election.update(
         { status: "closed" },
-        {
-          where: {
-            status: "open"
-          }
-        }
+        { where: { status: "open" } }
       );
     }
 
     election.status = status;
     await election.save();
 
-    if (status === "open") {
-      await logAction(
-        req.admin,
-        "Activar elección",
-        `Se activó ${pollId} y se cerraron otras abiertas.`
-      );
-    } else {
-      await logAction(
-        req.admin,
-        "Cerrar elección",
-        `Se cerró la elección ${pollId}.`
-      );
-    }
+    await logAction({
+      admin: req.admin,
+      action: "change_status",
+      entity: "election",
+      entityId: pollId,
+      details: `Nuevo estado: ${status}`,
+      req
+    });
 
     return res.json({
-      message:
-        "Estado actualizado correctamente"
+      message: "Estado actualizado correctamente"
     });
 
   } catch (err) {
-    console.error(
-      "ERROR CHANGE STATUS:",
-      err
-    );
+    console.error("ERROR CHANGE STATUS:", err);
 
     return res.status(500).json({
-      message:
-        "Error cambiando estado"
+      message: "Error cambiando estado"
     });
   }
 }
 
 // =====================================================
-// 🔵 EDITAR ELECCIÓN COMPLETA
-// Soporta simple y compound
+// 🔵 EDITAR ELECCIÓN
 // =====================================================
 async function editElection(req, res) {
   try {
     const { pollId } = req.params;
 
-    const election =
-      await Election.findOne({
-        where: { pollId }
-      });
+    const election = await Election.findOne({
+      where: { pollId }
+    });
 
     if (!election) {
       return res.status(404).json({
-        message:
-          "Elección no encontrada"
+        message: "Elección no encontrada"
       });
     }
 
-    const newTitle =
-      req.body.title || election.title;
-
-    const newType =
-      req.body.type ||
-      election.type ||
-      "simple";
+    const newTitle = cleanString(req.body.title || election.title);
+    const newType = req.body.type || election.type || "simple";
 
     let newOptions = [];
     let newSections = [];
 
-    // ======================================
-    // SIMPLE
-    // ======================================
     if (newType === "simple") {
-      newOptions = JSON.parse(
-        req.body.options || "[]"
-      );
+      newOptions = JSON.parse(req.body.options || "[]");
 
-      if (
-        req.files &&
-        req.files.length > 0
-      ) {
-        let fileIndex = 0;
-
-        newOptions = newOptions.map(
-          (opt) => {
-            if (
-              opt.newImage &&
-              req.files[fileIndex]
-            ) {
-              opt.imageUrl =
-                `/uploads/${req.files[fileIndex].filename}`;
-
-              fileIndex++;
-            }
-
-            delete opt.newImage;
-            return opt;
-          }
-        );
-      }
+      newOptions = newOptions.map(opt => ({
+        text: cleanString(opt.text),
+        description: cleanString(opt.description),
+        imageUrl: opt.imageUrl || ""
+      }));
     }
 
-    // ======================================
-    // COMPOUND
-    // ======================================
     if (newType === "compound") {
-      newSections = JSON.parse(
-        req.body.sections || "[]"
-      );
+      newSections = JSON.parse(req.body.sections || "[]");
 
-      if (
-        req.files &&
-        req.files.length > 0
-      ) {
-        let fileIndex = 0;
-
-        newSections = newSections.map(
-          (sec) => {
-            sec.options = (sec.options || []).map(
-              (opt) => {
-                if (
-                  opt.newImage &&
-                  req.files[fileIndex]
-                ) {
-                  opt.imageUrl =
-                    `/uploads/${req.files[fileIndex].filename}`;
-
-                  fileIndex++;
-                }
-
-                delete opt.newImage;
-                return opt;
-              }
-            );
-
-            return sec;
-          }
-        );
-      }
+      newSections = newSections.map(sec => ({
+        title: cleanString(sec.title),
+        options: (sec.options || []).map(opt => ({
+          text: cleanString(opt.text),
+          description: cleanString(opt.description),
+          imageUrl: opt.imageUrl || ""
+        }))
+      }));
     }
 
-    // ======================================
-    // GUARDAR
-    // ======================================
     election.title = newTitle;
     election.type = newType;
 
@@ -349,26 +309,24 @@ async function editElection(req, res) {
 
     await election.save();
 
-    await logAction(
-      req.admin,
-      "Editar elección",
-      `Se editó ${pollId}. Tipo: ${newType}.`
-    );
+    await logAction({
+      admin: req.admin,
+      action: "edit_election",
+      entity: "election",
+      entityId: pollId,
+      details: `Tipo: ${newType}`,
+      req
+    });
 
     return res.json({
-      message:
-        "Elección editada correctamente"
+      message: "Elección editada correctamente"
     });
 
   } catch (err) {
-    console.error(
-      "EDIT ERROR:",
-      err
-    );
+    console.error("EDIT ERROR:", err);
 
     return res.status(500).json({
-      message:
-        "Error editando elección"
+      message: "Error editando elección"
     });
   }
 }
@@ -384,25 +342,24 @@ async function deleteVotes(req, res) {
       where: { pollId }
     });
 
-    await logAction(
-      req.admin,
-      "Eliminar votos",
-      `Se eliminaron los votos de ${pollId}.`
-    );
+    await logAction({
+      admin: req.admin,
+      action: "delete_votes",
+      entity: "election",
+      entityId: pollId,
+      details: "Se eliminaron votos",
+      req
+    });
 
     return res.json({
       message: "Votos eliminados"
     });
 
   } catch (err) {
-    console.error(
-      "ERROR DELETE VOTES:",
-      err
-    );
+    console.error("ERROR DELETE VOTES:", err);
 
     return res.status(500).json({
-      message:
-        "Error eliminando votos"
+      message: "Error eliminando votos"
     });
   }
 }
@@ -418,26 +375,24 @@ async function deleteElection(req, res) {
       where: { pollId }
     });
 
-    await logAction(
-      req.admin,
-      "Eliminar elección",
-      `Se eliminó ${pollId}.`
-    );
+    await logAction({
+      admin: req.admin,
+      action: "delete_election",
+      entity: "election",
+      entityId: pollId,
+      details: "Eliminación",
+      req
+    });
 
     return res.json({
-      message:
-        "Elección eliminada"
+      message: "Elección eliminada"
     });
 
   } catch (err) {
-    console.error(
-      "ERROR DELETE:",
-      err
-    );
+    console.error("ERROR DELETE:", err);
 
     return res.status(500).json({
-      message:
-        "Error eliminando elección"
+      message: "Error eliminando elección"
     });
   }
 }
