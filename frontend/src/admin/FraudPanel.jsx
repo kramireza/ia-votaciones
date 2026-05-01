@@ -115,7 +115,12 @@ export default function FraudPanel({ token }) {
               key={i}
               className="flex justify-between items-center px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800"
             >
-              <span className="font-mono">{ip.ipAddress || "N/A"}</span>
+              <div>
+                <div className="font-mono">{ip.ipAddress || "N/A"}</div>
+                <div className="text-xs text-slate-500">
+                  {ip.country || "Desconocido"}
+                </div>
+              </div>
               <span className="font-bold text-indigo-600">
                 {ip.count} votos
               </span>
@@ -170,6 +175,26 @@ export default function FraudPanel({ token }) {
           </div>
         )}
       </div>
+
+        {/* 📜 LOGS */}
+        <div className="rounded-2xl border p-5 bg-white dark:bg-slate-900 dark:border-slate-800">
+          <h2 className="text-xl font-bold mb-4">
+            📜 Eventos de seguridad
+          </h2>
+
+          <div className="space-y-2 max-h-64 overflow-auto">
+            {data.logs?.map((log, i) => (
+              <div
+                key={i}
+                className="text-sm px-3 py-2 rounded bg-slate-50 dark:bg-slate-800"
+              >
+                <div className="font-mono text-xs">{log.ipAddress}</div>
+                <div className="text-red-500 font-semibold">{log.type}</div>
+                <div>{log.message}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
     </div>
   );

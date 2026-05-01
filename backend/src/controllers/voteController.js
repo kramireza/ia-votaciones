@@ -1,5 +1,6 @@
 const Vote = require("../models/Vote");
 const Election = require("../models/Election");
+const FraudLog = require("../models/FraudLog");
 const {
   exportVotesToExcel,
   exportResultsToExcel
@@ -64,7 +65,7 @@ async function castVote(req, res) {
     });
 
     if (recentVote) {
-      const lastVoteTime = new Date(recentVote.createdAt).getTime();
+      const lastVoteTime = new Date(recentVote.timestamp).getTime();
       const now = Date.now();
 
       // 3 segundos de cooldown (ajustable)
@@ -89,10 +90,19 @@ async function castVote(req, res) {
     });
 
     if (existing) {
+
+      await FraudLog.create({
+        ipAddress: ip,
+        pollId,
+        type: "duplicate",
+        message: "Intento de doble voto"
+      });
+
       return res.status(400).json({
         message: "Ya votó en esta votación."
       });
     }
+
     // 🔍 Conteo de votos por IP (control global)
     const votesFromIP = await Vote.count({
       where: {
@@ -101,8 +111,26 @@ async function castVote(req, res) {
       }
     });
 
+    // 🚨 LOG SI IP ES SOSPECHOSA
+    if (votesFromIP >= 3) {
+      await FraudLog.create({
+        ipAddress: ip,
+        pollId,
+        type: "suspicious",
+        message: `IP con ${votesFromIP} votos`
+      });
+    }
+
     // 🔒 Permitir hasta 5 votos por IP (laboratorio seguro)
     if (votesFromIP >= 5) {
+      
+      await FraudLog.create({
+        ipAddress: ip,
+        pollId,
+        type: "blocked",
+        message: "Demasiados votos desde esta IP"
+      });
+
       return res.status(429).json({
         message: "Demasiados votos desde esta red. Intente más tarde."
       });

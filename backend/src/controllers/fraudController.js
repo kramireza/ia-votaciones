@@ -1,5 +1,7 @@
 // backend/src/controllers/fraudController.js
 const Vote = require("../models/Vote");
+const geoip = require("geoip-lite");
+const FraudLog = require("../models/FraudLog");
 const { fn, col } = require("sequelize");
 
 // ============================================================
@@ -10,7 +12,7 @@ async function getFraudSummary(req, res) {
     const totalVotes = await Vote.count();
 
     // 🔥 votos por IP
-    const votesByIP = await Vote.findAll({
+    const votesByIPRaw = await Vote.findAll({
       attributes: [
         "ipAddress",
         [fn("COUNT", col("id")), "count"]
@@ -18,6 +20,15 @@ async function getFraudSummary(req, res) {
       group: ["ipAddress"],
       order: [[fn("COUNT", col("id")), "DESC"]],
       raw: true
+    });
+
+    const votesByIP = votesByIPRaw.map(v => {
+      const geo = geoip.lookup(v.ipAddress || "");
+
+      return {
+        ...v,
+        country: geo?.country || "N/A"
+      };
     });
 
     // 🔥 IPs sospechosas (>5 votos)
@@ -34,12 +45,18 @@ async function getFraudSummary(req, res) {
       }
     });
 
+    const logs = await FraudLog.findAll({
+      order: [["createdAt", "DESC"]],
+      limit: 20
+    });
+
     return res.json({
       totalVotes,
       totalIPs: votesByIP.length,
       suspiciousIPs,
       recentVotes,
-      topIPs: votesByIP.slice(0, 10)
+      topIPs: votesByIP.slice(0, 10),
+      logs
     });
 
   } catch (error) {
