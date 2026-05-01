@@ -1,4 +1,5 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
 const {
@@ -18,12 +19,50 @@ const permit = require("../middleware/permit");
 // ============================================================
 // 🔵 VALIDADORES BÁSICOS
 // ============================================================
+function basicBotProtection(req, res, next) {
+  const userAgent = req.headers["user-agent"];
+
+  // bloquear requests sin user-agent (bots simples)
+  if (!userAgent) {
+    return res.status(403).json({
+      message: "Acceso no permitido"
+    });
+  }
+
+  next();
+}
+
 function validateCastVote(req, res, next) {
-  const { studentAccount, pollId } = req.body;
+  let { studentAccount, pollId, option, answers } = req.body;
+
+  // 🔐 Normalización
+  studentAccount = String(studentAccount || "").trim();
+  pollId = String(pollId || "").trim();
 
   if (!studentAccount || !pollId) {
     return res.status(400).json({
       message: "Datos incompletos"
+    });
+  }
+
+  // 🔒 Validación básica de longitud
+  if (studentAccount.length > 20) {
+    return res.status(400).json({
+      message: "Cuenta inválida"
+    });
+  }
+
+  // 🔒 Validación contra payloads raros
+  if (typeof studentAccount !== "string") {
+    return res.status(400).json({
+      message: "Formato inválido"
+    });
+  }
+
+  // 🔒 Validar contenido de voto
+  if (!option && !answers) {
+    return res.status(400).json({
+      message: "Debe seleccionar una opción"
     });
   }
 
@@ -42,6 +81,17 @@ function validateCheckVote(req, res, next) {
   next();
 }
 
+// 🔐 Rate limit específico para votos (ANTI SPAM)
+const voteLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutos
+  max: 50, // máximo 50 requests por IP
+  message: {
+    message: "Demasiados intentos de voto, intenta más tarde."
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // ============================================================
 // 🔵 PÚBLICO
 // ============================================================
@@ -49,6 +99,8 @@ function validateCheckVote(req, res, next) {
 // Registrar voto
 router.post(
   "/cast",
+  voteLimiter,
+  basicBotProtection,
   validateCastVote,
   castVote
 );

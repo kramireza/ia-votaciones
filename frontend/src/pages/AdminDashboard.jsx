@@ -23,6 +23,9 @@ const StudentsPanel = React.lazy(() =>
 const ResultsPanel = React.lazy(() =>
   import("../admin/ResultsPanel.jsx")
 );
+const FraudPanel = React.lazy(() =>
+  import("../admin/FraudPanel.jsx")
+);
 const AdminUsersPanel = React.lazy(() =>
   import("../admin/AdminUsersPanel.jsx")
 );
@@ -115,6 +118,8 @@ export default function AdminDashboard({
       "Gestión de Estudiantes",
     results:
       "Resultados Generales",
+    fraud: 
+      "Detección de Fraude",
     requests:
       "Solicitudes",
     admins:
@@ -243,6 +248,9 @@ export default function AdminDashboard({
                   "Resultados",
                   "📈"
                 )}
+
+              {canView("logs") &&
+                menuButton("fraud", "Fraude", "🚨")}
 
               {canView(
                 "requests"
@@ -388,6 +396,10 @@ export default function AdminDashboard({
                     }
                   />
                 )}
+
+              {tab === "fraud" && canView("logs") && (
+                <FraudPanel token={token} />
+              )}
 
               {tab ===
                 "requests" &&

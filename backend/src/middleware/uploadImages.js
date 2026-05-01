@@ -1,6 +1,8 @@
+// backend/src/middleware/uploadImages.js
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const FileType = require("file-type");
 
 const uploadDir = path.join(__dirname, "../../uploads");
 
@@ -8,6 +10,9 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// ======================================
+// 🔐 STORAGE SEGURO
+// ======================================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -20,6 +25,9 @@ const storage = multer.diskStorage({
   }
 });
 
+// ======================================
+// 🔐 FILTRO INICIAL (BÁSICO)
+// ======================================
 const upload = multer({
   storage,
 
@@ -28,26 +36,49 @@ const upload = multer({
   },
 
   fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const mime = file.mimetype;
-
-    const allowedExt = [".jpg", ".jpeg", ".png", ".webp"];
     const allowedMime = [
       "image/jpeg",
       "image/png",
       "image/webp"
     ];
 
-    if (!allowedExt.includes(ext)) {
-      return cb(new Error("Formato de imagen no permitido"));
-    }
-
-    if (!allowedMime.includes(mime)) {
-      return cb(new Error("Tipo MIME inválido"));
+    if (!allowedMime.includes(file.mimetype)) {
+      return cb(new Error("Tipo de archivo no permitido"));
     }
 
     cb(null, true);
   }
 });
 
-module.exports = upload;
+// ======================================
+// 🔥 VALIDACIÓN REAL DEL ARCHIVO
+// ======================================
+const validateImage = async (req, res, next) => {
+  try {
+    if (!req.file) return next();
+
+    const filePath = req.file.path;
+
+    const fileBuffer = fs.readFileSync(filePath);
+
+    const type = await FileType.fromBuffer(fileBuffer);
+
+    if (!type || !["image/jpeg", "image/png", "image/webp"].includes(type.mime)) {
+      fs.unlinkSync(filePath); // eliminar archivo malicioso
+
+      return res.status(400).json({
+        message: "Archivo inválido o corrupto"
+      });
+    }
+
+    next();
+
+  } catch (err) {
+    console.error("Error validando imagen:", err);
+    return res.status(500).json({
+      message: "Error validando archivo"
+    });
+  }
+};
+
+module.exports = { upload, validateImage };

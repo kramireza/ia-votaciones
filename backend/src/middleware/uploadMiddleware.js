@@ -25,18 +25,20 @@ const upload = multer({
 
   fileFilter(req, file, cb) {
     const ext = path.extname(file.originalname).toLowerCase();
-    const mime = file.mimetype;
 
-    // ✔ validar extensión
     if (ext !== ".csv") {
       return cb(new Error("Solo archivos CSV"));
     }
 
-    // ✔ validar MIME (extra seguridad)
-    if (
-      mime !== "text/csv" &&
-      mime !== "application/vnd.ms-excel"
-    ) {
+    // Validar mimetype flexible (algunos navegadores cambian esto)
+    const allowedMime = [
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/csv",
+      "text/plain"
+    ];
+
+    if (!allowedMime.includes(file.mimetype)) {
       return cb(new Error("Tipo de archivo inválido"));
     }
 

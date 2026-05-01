@@ -57,6 +57,12 @@ const Vote = sequelize.define("Vote", {
   timestamp: { 
     type: DataTypes.DATE, 
     defaultValue: DataTypes.NOW 
+  },
+
+  // 🌐 IP del votante (seguridad)
+  ipAddress: {
+    type: DataTypes.STRING(100),
+    allowNull: true
   }
 
 }, {
@@ -64,10 +70,15 @@ const Vote = sequelize.define("Vote", {
   timestamps: false,
 
   indexes: [
-    // 🔥 CLAVE PARA COMPOUND
+    // 🔥 Evita doble voto por cuenta
     {
       unique: true,
       fields: ["studentAccount", "pollId"]
+    },
+
+    // 🔒 Control adicional por IP
+    {
+      fields: ["pollId", "ipAddress"]
     }
   ]
 });

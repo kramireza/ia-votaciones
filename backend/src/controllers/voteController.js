@@ -4,6 +4,7 @@ const {
   exportVotesToExcel,
   exportResultsToExcel
 } = require("../utils/excelExport");
+const BlockedIP = require("../models/BlockedIP");
 
 const { fn, col } = require("sequelize");
 const logAction = require("../utils/logAction");
@@ -12,8 +13,26 @@ const logAction = require("../utils/logAction");
 // REGISTRAR VOTO
 // ============================================================
 async function castVote(req, res) {
+
+  // 🌐 Obtener IP real PRIMERO
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0] ||
+    req.socket.remoteAddress ||
+    req.ip;
+
+  // 🔒 BLOQUEO DE IP
+  const blocked = await BlockedIP.findOne({
+    where: { ipAddress: ip }
+  });
+
+  if (blocked) {
+    return res.status(403).json({
+      message: "Acceso bloqueado"
+    });
+  }
+
   try {
-    const {
+    let {
       studentAccount,
       studentName,
       studentCenter,
@@ -21,6 +40,10 @@ async function castVote(req, res) {
       option,
       answers
     } = req.body;
+
+    // 🔐 Normalización básica
+    studentAccount = String(studentAccount || "").trim();
+    pollId = String(pollId || "").trim();
 
     if (!studentAccount || !pollId) {
       return res.status(400).json({
@@ -31,6 +54,26 @@ async function castVote(req, res) {
     const election = await Election.findOne({
       where: { pollId }
     });
+
+    // 🔒 Anti spam (misma IP en corto tiempo)
+    const recentVote = await Vote.findOne({
+      where: {
+        pollId
+      },
+      order: [["timestamp", "DESC"]]
+    });
+
+    if (recentVote) {
+      const lastVoteTime = new Date(recentVote.createdAt).getTime();
+      const now = Date.now();
+
+      // 3 segundos de cooldown (ajustable)
+      if (now - lastVoteTime < 3000) {
+        return res.status(429).json({
+          message: "Espera unos segundos antes de votar nuevamente."
+        });
+      }
+    }
 
     if (!election) {
       return res.status(400).json({
@@ -50,7 +93,20 @@ async function castVote(req, res) {
         message: "Ya votó en esta votación."
       });
     }
+    // 🔍 Conteo de votos por IP (control global)
+    const votesFromIP = await Vote.count({
+      where: {
+        pollId,
+        ipAddress: ip
+      }
+    });
 
+    // 🔒 Permitir hasta 5 votos por IP (laboratorio seguro)
+    if (votesFromIP >= 5) {
+      return res.status(429).json({
+        message: "Demasiados votos desde esta red. Intente más tarde."
+      });
+    }
     // ================= SIMPLE =================
     if (type === "simple") {
 
@@ -66,6 +122,7 @@ async function castVote(req, res) {
         studentCenter,
         pollId,
         option,
+        ipAddress: ip
       });
 
       return res.json({
@@ -88,6 +145,7 @@ async function castVote(req, res) {
         studentCenter,
         pollId,
         option: JSON.stringify(answers),
+        ipAddress: ip
       });
 
       return res.json({
@@ -200,6 +258,9 @@ async function exportResultsExcel(req, res) {
       where: { pollId },
       raw: true
     });
+
+    // 🔥 FIX: obtener secciones desde la elección
+    const sections = election.sections || [];
 
     const rows = [];
     sections.forEach((section) => {

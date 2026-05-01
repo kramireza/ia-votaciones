@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const upload = require("../middleware/uploadImages");
+const { upload, validateImage } = require("../middleware/uploadImages");
 const { adminAuth } = require("../middleware/authMiddleware");
 const permit = require("../middleware/permit");
 
@@ -28,13 +28,25 @@ router.post(
   adminAuth,
   permit("superadmin", "editor"),
   (req, res, next) => {
-    upload.array("images")(req, res, function (err) {
+    upload.array("images")(req, res, async function (err) {
       if (err) {
         return res.status(400).json({
           message: err.message || "Error subiendo imágenes"
         });
       }
-      next();
+
+      try {
+        if (req.files && req.files.length > 0) {
+          for (let file of req.files) {
+            await validateImage({ file }, res, () => {});
+          }
+        }
+        next();
+      } catch (error) {
+        return res.status(400).json({
+          message: "Error validando imágenes"
+        });
+      }
     });
   },
   createElection
@@ -68,13 +80,25 @@ router.put(
   adminAuth,
   permit("superadmin"),
   (req, res, next) => {
-    upload.array("images")(req, res, function (err) {
+    upload.array("images")(req, res, async function (err) {
       if (err) {
         return res.status(400).json({
           message: err.message || "Error subiendo imágenes"
         });
       }
-      next();
+
+      try {
+        if (req.files && req.files.length > 0) {
+          for (let file of req.files) {
+            await validateImage({ file }, res, () => {});
+          }
+        }
+        next();
+      } catch (error) {
+        return res.status(400).json({
+          message: "Error validando imágenes"
+        });
+      }
     });
   },
   editElection
