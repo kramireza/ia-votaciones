@@ -317,7 +317,15 @@ async function getDetailedVoteResults(req, res) {
             text: opt.text,
             votes: count,
 
-            imageUrl: opt.imageUrl || opt.image || null,
+            imageUrl: opt.imageUrl
+              ? opt.imageUrl
+              : opt.image
+                ? opt.image.startsWith("http")
+                  ? opt.image
+                  : opt.image.startsWith("/")
+                    ? opt.image
+                    : `/${opt.image}`
+                : null,
             description: opt.description || null
           };
         });
@@ -431,7 +439,15 @@ async function getPublicResults(req, res) {
             text: opt.text,
             votes: count,
 
-            imageUrl: opt.imageUrl || opt.image || null,
+            imageUrl: opt.imageUrl
+              ? opt.imageUrl
+              : opt.image
+                ? opt.image.startsWith("http")
+                  ? opt.image
+                  : opt.image.startsWith("/")
+                    ? opt.image
+                    : `/${opt.image}`
+                : null,
             description: opt.description || null
           };
         });
@@ -564,7 +580,15 @@ async function getAllResults(req, res) {
               text: opt.text,
               votes: count,
 
-              imageUrl: opt.imageUrl || opt.image || null,
+              imageUrl: opt.imageUrl
+                ? opt.imageUrl
+                : opt.image
+                  ? opt.image.startsWith("http")
+                    ? opt.image
+                    : opt.image.startsWith("/")
+                      ? opt.image
+                      : `/${opt.image}`
+                  : null,
               description: opt.description || null
             };
           });
