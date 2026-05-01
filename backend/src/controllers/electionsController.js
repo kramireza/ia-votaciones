@@ -106,23 +106,23 @@ async function createElection(req, res) {
         }))
       }));
 
+      // 🔥 FIX REAL IMÁGENES COMPOUND
       if (req.files && req.files.length > 0) {
         let fileIndex = 0;
 
         sections = sections.map((sec) => {
           sec.options = (sec.options || []).map((opt) => {
-            if (
-              opt.image &&
-              req.files[fileIndex]
-            ) {
-              opt.imageUrl =
-                `/uploads/${req.files[fileIndex].filename}`;
 
+            if (req.files[fileIndex]) {
+              opt.imageUrl = `/uploads/${req.files[fileIndex].filename}`;
               fileIndex++;
             }
 
-            delete opt.image;
-            return opt;
+            return {
+              text: cleanString(opt.text),
+              description: cleanString(opt.description),
+              imageUrl: opt.imageUrl || ""
+            };
           });
 
           return sec;
