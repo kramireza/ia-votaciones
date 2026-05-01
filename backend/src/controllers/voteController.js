@@ -285,13 +285,15 @@ async function getDetailedVoteResults(req, res) {
         let count = 0;
 
         votes.forEach(v => {
-          if (v.option === opt) {
+          if (v.option === opt.text) {
             count++;
           }
         });
 
         return {
-          text: opt,
+          text: typeof opt === "object" ? opt.text : opt,
+          image: typeof opt === "object" ? opt.imageUrl || opt.image : null,
+          description: typeof opt === "object" ? opt.description : null,
           votes: count
         };
       });
@@ -394,13 +396,15 @@ async function getPublicResults(req, res) {
         let count = 0;
 
         votes.forEach(v => {
-          if (v.option === opt) {
+          if (v.option === opt.text) {
             count++;
           }
         });
 
         return {
-          text: opt,
+          text: typeof opt === "object" ? opt.text : opt,
+          image: typeof opt === "object" ? opt.imageUrl || opt.image : null,
+          description: typeof opt === "object" ? opt.description : null,
           votes: count
         };
       });
@@ -522,13 +526,15 @@ async function getAllResults(req, res) {
           let count = 0;
 
           votes.forEach(v => {
-            if (v.option === opt) {
+            if (v.option === opt.text) {
               count++;
             }
           });
 
           return {
-            text: opt,
+            text: typeof opt === "object" ? opt.text : opt,
+            image: typeof opt === "object" ? opt.imageUrl || opt.image : null,
+            description: typeof opt === "object" ? opt.description : null,
             votes: count
           };
         });
