@@ -315,7 +315,10 @@ async function getDetailedVoteResults(req, res) {
 
           return {
             text: opt.text,
-            votes: count
+            votes: count,
+
+            imageUrl: opt.imageUrl || opt.image || null,
+            description: opt.description || null
           };
         });
 
@@ -426,7 +429,10 @@ async function getPublicResults(req, res) {
 
           return {
             text: opt.text,
-            votes: count
+            votes: count,
+
+            imageUrl: opt.imageUrl || opt.image || null,
+            description: opt.description || null
           };
         });
 
@@ -556,7 +562,10 @@ async function getAllResults(req, res) {
 
             return {
               text: opt.text,
-              votes: count
+              votes: count,
+
+              imageUrl: opt.imageUrl || opt.image || null,
+              description: opt.description || null
             };
           });
 
