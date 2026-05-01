@@ -358,9 +358,9 @@ export default function ResultsPanel({ token }) {
                         >
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              {opt.imageUrl && (
+                              {(opt.imageUrl || opt.image) && (
                                 <img
-                                  src={`${API_BASE}${opt.imageUrl}`}
+                                  src={`${API_BASE}${opt.imageUrl || opt.image}`}
                                   alt={opt.text}
                                   className="w-14 h-14 rounded-xl object-cover border"
                                 />
@@ -514,9 +514,9 @@ export default function ResultsPanel({ token }) {
                             >
                               <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                  {opt.imageUrl && (
+                                  {(opt.imageUrl || opt.image) && (
                                     <img
-                                      src={`${API_BASE}${opt.imageUrl}`}
+                                      src={`${API_BASE}${opt.imageUrl || opt.image}`}
                                       alt={opt.text}
                                       className="w-14 h-14 rounded-xl object-cover border"
                                     />

@@ -478,12 +478,10 @@ export default function PublicResults() {
                     >
                       <div className="flex gap-4 items-center">
 
-                        {opt.imageUrl && (
+                        {(opt.imageUrl || opt.image) && (
                           <img
-                            src={`${API_BASE}${opt.imageUrl}`}
-                            alt={
-                              opt.text
-                            }
+                            src={`${API_BASE}${opt.imageUrl || opt.image}`}
+                            alt={opt.text}
                             className="w-24 h-24 rounded-2xl object-cover border dark:border-slate-700"
                           />
                         )}
@@ -666,12 +664,10 @@ export default function PublicResults() {
                                   <div className="flex justify-between gap-3">
 
                                     <div className="flex items-center gap-3">
-                                      {opt.imageUrl && (
+                                      {(opt.imageUrl || opt.image) && (
                                         <img
-                                          src={`${API_BASE}${opt.imageUrl}`}
-                                          alt={
-                                            opt.text
-                                          }
+                                          src={`${API_BASE}${opt.imageUrl || opt.image}`}
+                                          alt={opt.text}
                                           className="w-14 h-14 rounded-xl object-cover border dark:border-slate-700"
                                         />
                                       )}

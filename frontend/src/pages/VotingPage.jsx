@@ -386,9 +386,9 @@ export default function VotingPage({
                           </div>
                         )}
 
-                        {opt.imageUrl && (
+                        {(opt.imageUrl || opt.image) && (
                           <img
-                            src={`${API_BASE}${opt.imageUrl}`}
+                            src={`${API_BASE}${opt.imageUrl || opt.image}`}
                             className="w-full max-w-[180px] h-auto rounded-xl border object-cover mt-3 dark:border-slate-700"
                           />
                         )}
@@ -524,9 +524,9 @@ export default function VotingPage({
                                   </div>
                                 )}
 
-                                {opt.imageUrl && (
+                                {(opt.imageUrl || opt.image) && (
                                   <img
-                                    src={`${API_BASE}${opt.imageUrl}`}
+                                    src={`${API_BASE}${opt.imageUrl || opt.image}`}
                                     className="w-full max-w-[180px] h-auto rounded-xl border object-cover mt-3 dark:border-slate-700"
                                   />
                                 )}
