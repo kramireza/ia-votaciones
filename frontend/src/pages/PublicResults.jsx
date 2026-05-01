@@ -45,6 +45,12 @@ export default function PublicResults() {
   const [now, setNow] =
     useState(new Date());
 
+  // ===============================
+  // 🔥 NUEVO ESTADO AGREGADO
+  // ===============================
+  const [lastUpdate, setLastUpdate] =
+    useState(null);
+
   const API_BASE =
     import.meta.env.VITE_API_URL?.replace(
       "/api",
@@ -58,6 +64,12 @@ export default function PublicResults() {
         await api.getPublicResults();
 
       setData(res.data);
+
+      // ===============================
+      // 🔥 NUEVA LÍNEA AGREGADA
+      // ===============================
+      setLastUpdate(new Date());
+
       setError("");
 
     } catch (err) {
@@ -253,6 +265,7 @@ export default function PublicResults() {
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 {now.toLocaleTimeString()}
               </div>
+
               <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 Actualización automática cada 10s
@@ -289,11 +302,15 @@ export default function PublicResults() {
                 Actualizado
               </div>
 
+              {/* ===============================
+                  🔥 BLOQUE MODIFICADO
+                  =============================== */}
               <div className="text-lg font-bold">
-                {data.updatedAt
-                  ? new Date(data.updatedAt).toLocaleTimeString()
+                {lastUpdate
+                  ? lastUpdate.toLocaleTimeString()
                   : "Sin actualizar"}
               </div>
+
             </div>
 
           </div>
