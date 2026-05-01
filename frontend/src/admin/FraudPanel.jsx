@@ -17,13 +17,13 @@ export default function FraudPanel({ token }) {
 
   async function loadData() {
     try {
-      const trendRes = await axios.get("/api/fraud/trend", {
+      const trendRes = await axios.get("/votaciones/api/fraud/trend", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       setTrend(trendRes.data);
       const res = await axios.get(
-        "/api/fraud/summary",
+        "/votaciones/api/fraud/summary",
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -146,7 +146,7 @@ export default function FraudPanel({ token }) {
 
                   <button
                     onClick={async () => {
-                      await axios.post("/api/fraud/block", {
+                      await axios.post("/votaciones/api/fraud/block", {
                         ip: ip.ipAddress
                       }, {
                         headers: {
