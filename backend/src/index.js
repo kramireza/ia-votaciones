@@ -116,7 +116,7 @@ async function start() {
     console.log("DB conectada");
 
     // ⚠️ PRODUCCIÓN: usar false
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
 
     const bcrypt = require("bcrypt");
 

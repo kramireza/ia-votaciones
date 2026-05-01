@@ -39,12 +39,30 @@ async function castVote(req, res) {
       studentCenter,
       pollId,
       option,
-      answers
+      answers,
+      fingerprint,
+      signature
     } = req.body;
 
     // 🔐 Normalización básica
     studentAccount = String(studentAccount || "").trim();
     pollId = String(pollId || "").trim();
+
+    // 🔐 VALIDACIÓN DE FIRMA SIMPLE (CORRECTA)
+    const crypto = require("crypto");
+
+    const SECRET = process.env.VOTE_SECRET || "secret123";
+
+    const expectedSignature = crypto
+      .createHmac("sha256", SECRET)
+      .update(studentAccount + pollId)
+      .digest("hex");
+
+    if (signature !== expectedSignature) {
+      return res.status(403).json({
+        message: "Solicitud inválida"
+      });
+    }
 
     if (!studentAccount || !pollId) {
       return res.status(400).json({
@@ -102,6 +120,25 @@ async function castVote(req, res) {
         message: "Ya votó en esta votación."
       });
     }
+    
+    // 🔍 DETECCIÓN POR FINGERPRINT
+    if (fingerprint) {
+      const sameDeviceVotes = await Vote.count({
+        where: {
+          pollId,
+          fingerprint
+        }
+      });
+
+      if (sameDeviceVotes >= 2) {
+        await FraudLog.create({
+          ipAddress: ip,
+          pollId,
+          type: "fingerprint",
+          message: "Múltiples votos desde mismo dispositivo"
+        });
+      }
+    }
 
     // 🔍 Conteo de votos por IP (control global)
     const votesFromIP = await Vote.count({
@@ -150,7 +187,8 @@ async function castVote(req, res) {
         studentCenter,
         pollId,
         option,
-        ipAddress: ip
+        ipAddress: ip,
+        fingerprint
       });
 
       return res.json({
@@ -173,7 +211,8 @@ async function castVote(req, res) {
         studentCenter,
         pollId,
         option: JSON.stringify(answers),
-        ipAddress: ip
+        ipAddress: ip,
+        fingerprint
       });
 
       return res.json({

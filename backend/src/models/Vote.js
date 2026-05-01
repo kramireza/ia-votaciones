@@ -63,6 +63,12 @@ const Vote = sequelize.define("Vote", {
   ipAddress: {
     type: DataTypes.STRING(100),
     allowNull: true
+  },
+
+  // 🔐 Fingerprint del dispositivo
+  fingerprint: {
+    type: DataTypes.STRING(255),
+    allowNull: true
   }
 
 }, {

@@ -8,6 +8,27 @@ const api = axios.create({
   baseURL: BASE
 });
 
+async function generateSignature(studentAccount, pollId) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode("secret123"),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(studentAccount + pollId)
+  );
+
+  return btoa(
+    String.fromCharCode(...new Uint8Array(signature))
+  );
+}
+
 // ============================================================
 // 🔵 API COMPLETO
 // ============================================================
@@ -431,3 +452,5 @@ api.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
+export { generateSignature };

@@ -4,7 +4,7 @@ import React, {
   useRef
 } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api, { generateSignature } from "../services/api";
 
 export default function VotingPage({
   student,
@@ -211,14 +211,20 @@ export default function VotingPage({
       poll.type || "simple";
 
     try {
+      const fingerprint = generateFingerprint();
+
+      const signature = await generateSignature(
+        student.accountNumber,
+        poll.pollId
+      );
+
       const payload = {
-        studentAccount:
-          student.accountNumber,
-        studentName:
-          student.name,
-        studentCenter:
-          student.center,
-        pollId: poll.pollId
+        studentAccount: student.accountNumber,
+        studentName: student.name,
+        studentCenter: student.center,
+        pollId: poll.pollId,
+        fingerprint,
+        signature
       };
 
       if (type === "simple") {
@@ -289,6 +295,15 @@ export default function VotingPage({
       ""
     ) ||
     "http://localhost:4001";
+
+    function generateFingerprint() {
+      return btoa(
+        navigator.userAgent +
+        screen.width +
+        screen.height +
+        Intl.DateTimeFormat().resolvedOptions().timeZone
+      );
+    }
 
   return (
     <>
