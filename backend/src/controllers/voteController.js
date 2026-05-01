@@ -274,46 +274,63 @@ async function getDetailedVoteResults(req, res) {
 
     const totalVotes = votes.length;
 
-    const sections =
-      (election.sections || []).map(
-        (section) => {
-          const options =
-            section.options.map(
-              (opt) => {
-                let count = 0;
+    let options = [];
+    let sections = [];
 
-                votes.forEach((v) => {
+    if (election.type === "simple") {
 
-                  try {
-                    const parsed = JSON.parse(v.option);
+      const opts = election.options || [];
 
-                    if (parsed[section.title] === opt.text) {
-                      count++;
-                    }
-                  } catch {}
+      options = opts.map(opt => {
+        let count = 0;
 
-                });
+        votes.forEach(v => {
+          if (v.option === opt) {
+            count++;
+          }
+        });
 
-                return {
-                  text: opt.text,
-                  votes: count
-                };
+        return {
+          text: opt,
+          votes: count
+        };
+      });
+
+    } else {
+
+      sections = (election.sections || []).map(section => {
+        const opts = (section.options || []).map(opt => {
+          let count = 0;
+
+          votes.forEach(v => {
+            try {
+              const parsed = JSON.parse(v.option);
+              if (parsed[section.title] === opt.text) {
+                count++;
               }
-            );
+            } catch {}
+          });
 
           return {
-            title:
-              section.title,
-            options
+            text: opt.text,
+            votes: count
           };
-        }
-      );
+        });
+
+        return {
+          title: section.title,
+          options: opts
+        };
+      });
+
+    }
 
     return res.json({
       pollId,
       title: election.title,
       type: election.type,
       totalVotes,
+      options,
       sections
     });
 
@@ -365,44 +382,64 @@ async function getPublicResults(req, res) {
     const totalVotes =
       votes.length;
 
-    const sections =
-      (election.sections || []).map(
-        (section) => {
-          const options =
-            section.options.map(
-              (opt) => {
-                let count = 0;
+    // 🔥 FIX SIMPLE VS COMPOUND
+    let options = [];
+    let sections = [];
 
-                votes.forEach((v) => {
+    if (election.type === "simple") {
 
-                  try {
-                    const parsed = JSON.parse(v.option);
+      const opts = election.options || [];
 
-                    if (parsed[section.title] === opt.text) {
-                      count++;
-                    }
-                  } catch {}
-                });
+      options = opts.map(opt => {
+        let count = 0;
 
-                return {
-                  text: opt.text,
-                  votes: count
-                };
+        votes.forEach(v => {
+          if (v.option === opt) {
+            count++;
+          }
+        });
+
+        return {
+          text: opt,
+          votes: count
+        };
+      });
+
+    } else {
+
+      sections = (election.sections || []).map(section => {
+        const opts = (section.options || []).map(opt => {
+          let count = 0;
+
+          votes.forEach(v => {
+            try {
+              const parsed = JSON.parse(v.option);
+              if (parsed[section.title] === opt.text) {
+                count++;
               }
-            );
+            } catch {}
+          });
 
           return {
-            title: section.title,
-            options
+            text: opt.text,
+            votes: count
           };
-        }
-      );
+        });
+
+        return {
+          title: section.title,
+          options: opts
+        };
+      });
+
+    }
 
     return res.json({
       pollId,
       title: election.title,
       type: election.type,
       totalVotes,
+      options,
       sections,
       isClosed,
       updatedAt: election.updatedAt
@@ -474,38 +511,56 @@ async function getAllResults(req, res) {
 
       const totalVotes = votes.length;
 
-      const sections =
-        (election.sections || []).map(
-          (section) => {
-            const options =
-              (section.options || []).map(
-                (opt) => {
-                  let count = 0;
+      let options = [];
+      let sections = [];
 
-                  votes.forEach((v) => {
+      if (election.type === "simple") {
 
-                    try {
-                      const parsed = JSON.parse(v.option);
+        const opts = election.options || [];
 
-                      if (parsed[section.title] === opt.text) {
-                        count++;
-                      }
-                    } catch {}
-                  });
+        options = opts.map(opt => {
+          let count = 0;
 
-                  return {
-                    text: opt.text,
-                    votes: count
-                  };
+          votes.forEach(v => {
+            if (v.option === opt) {
+              count++;
+            }
+          });
+
+          return {
+            text: opt,
+            votes: count
+          };
+        });
+
+      } else {
+
+        sections = (election.sections || []).map(section => {
+          const opts = (section.options || []).map(opt => {
+            let count = 0;
+
+            votes.forEach(v => {
+              try {
+                const parsed = JSON.parse(v.option);
+                if (parsed[section.title] === opt.text) {
+                  count++;
                 }
-              );
+              } catch {}
+            });
 
             return {
-              title: section.title,
-              options
+              text: opt.text,
+              votes: count
             };
-          }
-        );
+          });
+
+          return {
+            title: section.title,
+            options: opts
+          };
+        });
+
+      }
 
       finalResults.push({
         pollId,
@@ -513,6 +568,7 @@ async function getAllResults(req, res) {
         type: election.type,
         status: election.status,
         totalVotes,
+        options,
         sections
       });
     }
