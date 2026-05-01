@@ -7,7 +7,6 @@ const sequelize = require("./db");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const hpp = require("hpp");
-const xssClean = require("xss-clean");
 
 const Admin = require("./models/Admin");
 
@@ -59,9 +58,6 @@ app.use(cors({
 app.use(helmet());
 
 app.use(express.json());
-
-// 🧼 Sanitizar XSS
-app.use(xssClean());
 
 // 🚫 Evitar HTTP Parameter Pollution
 app.use(hpp());
