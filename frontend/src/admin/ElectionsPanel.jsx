@@ -44,6 +44,8 @@ export default function ElectionsPanel({ token }) {
   const [confirmOpen, setConfirmOpen] = useState(null);
   const [processingOpen, setProcessingOpen] = useState(false);
 
+  const [saving, setSaving] = useState(false);
+
   // =====================================================
   // LOAD
   // =====================================================
@@ -139,6 +141,10 @@ export default function ElectionsPanel({ token }) {
   async function createElection(e) {
     e.preventDefault();
 
+    if (saving) return; // 🔒 evita doble click
+
+    setSaving(true);
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("type", type);
@@ -223,6 +229,8 @@ export default function ElectionsPanel({ token }) {
         type: "error",
         text: "Error creando elección."
       });
+    } finally {
+      setSaving(false); // 🔥 libera botón
     }
   }
     // =====================================================
@@ -454,6 +462,11 @@ export default function ElectionsPanel({ token }) {
   // SAVE EDIT
   // =====================================================
   async function saveEditChanges() {
+
+    if (saving) return; // 🔒 evita doble click
+
+    setSaving(true);
+
     const formData = new FormData();
 
     formData.append("title", editTitle);
@@ -542,6 +555,8 @@ export default function ElectionsPanel({ token }) {
 
     } catch (err) {
       alert("Error guardando.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -816,8 +831,11 @@ export default function ElectionsPanel({ token }) {
             </div>
           )}
 
-          <button className="w-full bg-indigo-700 text-white rounded-xl py-3 font-semibold">
-            Crear elección
+          <button
+            disabled={saving}
+            className="w-full bg-indigo-700 text-white rounded-xl py-3 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {saving ? "Creando..." : "Crear elección"}
           </button>
         </form>
 
@@ -1160,11 +1178,14 @@ export default function ElectionsPanel({ token }) {
 
               <button
                 onClick={saveEditChanges}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl"
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {role === "editor"
-                  ? "Enviar solicitud"
-                  : "Guardar cambios"}
+                {saving
+                  ? "Guardando..."
+                  : role === "editor"
+                    ? "Enviar solicitud"
+                    : "Guardar cambios"}
               </button>
             </div>
 
