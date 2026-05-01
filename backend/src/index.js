@@ -18,6 +18,8 @@ const importStudentsRoute = require("./routes/importStudents");
 const approvalsRoutes = require("./routes/approvals");
 
 const app = express();
+// 🔐 Confiar en proxy (NGINX / VPS)
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 // 🔐 CORS CONTROLADO
