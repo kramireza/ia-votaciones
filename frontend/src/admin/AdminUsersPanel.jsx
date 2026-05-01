@@ -11,7 +11,6 @@ export default function AdminUsersPanel({ token }) {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // 🔥 NUEVOS ESTADOS
   const [tempPassword, setTempPassword] = useState(null);
   const [showTempModal, setShowTempModal] = useState(false);
 
@@ -30,10 +29,7 @@ export default function AdminUsersPanel({ token }) {
       const res = await api.getAdmins(token);
       setAdmins(Array.isArray(res.data) ? res.data : []);
     } catch {
-      setMsg({
-        type: "error",
-        text: "No tienes permiso para ver administradores."
-      });
+      setMsg({ type: "error", text: "No tienes permiso." });
     } finally {
       setLoading(false);
     }
@@ -47,10 +43,7 @@ export default function AdminUsersPanel({ token }) {
 
       await api.createAdmin({ username, password, role }, token);
 
-      setMsg({
-        type: "success",
-        text: "Administrador creado correctamente."
-      });
+      setMsg({ type: "success", text: "Administrador creado." });
 
       setUsername("");
       setPassword("");
@@ -58,68 +51,46 @@ export default function AdminUsersPanel({ token }) {
 
       await loadAdmins();
     } catch {
-      setMsg({
-        type: "error",
-        text: "Error creando administrador."
-      });
+      setMsg({ type: "error", text: "Error creando administrador." });
     } finally {
       setSaving(false);
     }
   }
 
   async function removeAdmin(id) {
-    const ok = confirm("¿Eliminar este administrador?");
-    if (!ok) return;
+    if (!confirm("¿Eliminar este administrador?")) return;
 
     try {
       setDeletingId(id);
-      setMsg(null);
-
       await api.deleteAdmin(id, token);
-
-      setMsg({
-        type: "success",
-        text: "Administrador eliminado."
-      });
-
+      setMsg({ type: "success", text: "Administrador eliminado." });
       await loadAdmins();
     } catch (err) {
       setMsg({
         type: "error",
-        text: err?.response?.data?.message || "Error eliminando administrador."
+        text: err?.response?.data?.message || "Error eliminando."
       });
     } finally {
       setDeletingId(null);
     }
   }
 
-  // 🔥 RESET PASSWORD
   async function resetPassword(admin) {
     try {
-      setMsg(null);
-
-      // SUPERADMIN → abre modal
       if (admin.role === "superadmin") {
         setSelectedAdmin(admin);
         setShowPasswordModal(true);
         return;
       }
 
-      // EDITOR → generar temporal
       const res = await api.resetAdminPassword(admin.id, {}, token);
-
       setTempPassword(res.data.tempPassword);
       setShowTempModal(true);
-
     } catch {
-      setMsg({
-        type: "error",
-        text: "Error reseteando contraseña"
-      });
+      setMsg({ type: "error", text: "Error reseteando contraseña" });
     }
   }
 
-  // 🔥 CAMBIO DE PASSWORD SUPERADMIN
   async function changePassword() {
     try {
       await api.resetAdminPassword(
@@ -132,16 +103,9 @@ export default function AdminUsersPanel({ token }) {
       setCurrentPassword("");
       setNewPassword("");
 
-      setMsg({
-        type: "success",
-        text: "Contraseña actualizada"
-      });
-
+      setMsg({ type: "success", text: "Contraseña actualizada" });
     } catch {
-      setMsg({
-        type: "error",
-        text: "Error cambiando contraseña"
-      });
+      setMsg({ type: "error", text: "Error cambiando contraseña" });
     }
   }
 
@@ -156,76 +120,133 @@ export default function AdminUsersPanel({ token }) {
       </div>
 
       {/* FORM */}
-      <form onSubmit={createAdmin} className="space-y-4 bg-white p-6 rounded-3xl shadow">
-        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Usuario" required />
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Contraseña" required />
-        <select value={role} onChange={e => setRole(e.target.value)}>
+      <form
+        onSubmit={createAdmin}
+        className="grid md:grid-cols-4 gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl shadow border dark:border-slate-800"
+      >
+        <input
+          className="border rounded-xl px-4 py-2 dark:bg-slate-800 dark:border-slate-700"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          placeholder="Usuario"
+          required
+        />
+
+        <input
+          type="password"
+          className="border rounded-xl px-4 py-2 dark:bg-slate-800 dark:border-slate-700"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Contraseña"
+          required
+        />
+
+        <select
+          className="border rounded-xl px-4 py-2 dark:bg-slate-800 dark:border-slate-700"
+          value={role}
+          onChange={e => setRole(e.target.value)}
+        >
           <option value="editor">Editor</option>
           <option value="superadmin">Super Admin</option>
         </select>
-        <button disabled={saving}>
+
+        <button
+          disabled={saving}
+          className="bg-indigo-600 text-white rounded-xl px-4 py-2 font-bold hover:bg-indigo-700 transition"
+        >
           {saving ? "Creando..." : "Crear"}
         </button>
       </form>
 
       {/* TABLE */}
-      <table className="w-full bg-white rounded-3xl shadow">
-        <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>Rol</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {admins.map(a => (
-            <tr key={a.id}>
-              <td>{a.username}</td>
-              <td>{a.role}</td>
-              <td className="space-x-2">
-
-                {/* 🔥 RESET */}
-                <button onClick={() => resetPassword(a)}>
-                  🔑 Reset
-                </button>
-
-                {/* 🔥 DELETE (ahora también aplica a superadmin) */}
-                <button onClick={() => removeAdmin(a.id)}>
-                  🗑 Eliminar
-                </button>
-
-              </td>
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow overflow-hidden border dark:border-slate-800">
+        <table className="w-full">
+          <thead className="bg-slate-100 dark:bg-slate-800 text-left">
+            <tr>
+              <th className="p-3">Usuario</th>
+              <th className="p-3">Rol</th>
+              <th className="p-3">Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {admins.map(a => (
+              <tr key={a.id} className="border-t dark:border-slate-700">
+                <td className="p-3">{a.username}</td>
+                <td className="p-3">{a.role}</td>
+                <td className="p-3 space-x-2">
 
-      {/* 🔥 MODAL PASSWORD SUPERADMIN */}
+                  <button
+                    onClick={() => resetPassword(a)}
+                    className="text-yellow-600 hover:underline"
+                  >
+                    🔑 Reset
+                  </button>
+
+                  <button
+                    onClick={() => removeAdmin(a.id)}
+                    disabled={deletingId === a.id}
+                    className="text-red-600 hover:underline"
+                  >
+                    🗑 Eliminar
+                  </button>
+
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* MODAL SUPERADMIN */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-2xl space-y-3">
-            <h3>Cambiar contraseña</h3>
-            <input placeholder="Actual" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
-            <input placeholder="Nueva" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-            <button onClick={changePassword}>Guardar</button>
-            <button onClick={() => setShowPasswordModal(false)}>Cancelar</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl w-full max-w-md space-y-3">
+            <h3 className="font-bold text-lg">Cambiar contraseña</h3>
+
+            <input
+              placeholder="Actual"
+              value={currentPassword}
+              onChange={e => setCurrentPassword(e.target.value)}
+              className="w-full border rounded-xl px-4 py-2 dark:bg-slate-800"
+            />
+
+            <input
+              placeholder="Nueva"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              className="w-full border rounded-xl px-4 py-2 dark:bg-slate-800"
+            />
+
+            <button
+              onClick={changePassword}
+              className="w-full bg-indigo-600 text-white rounded-xl py-2"
+            >
+              Guardar
+            </button>
+
+            <button onClick={() => setShowPasswordModal(false)}>
+              Cancelar
+            </button>
           </div>
         </div>
       )}
 
-      {/* 🔥 MODAL PASSWORD TEMPORAL */}
+      {/* MODAL TEMP */}
       {showTempModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-2xl space-y-3">
-            <h3>Contraseña temporal</h3>
-            <p className="font-bold text-lg">{tempPassword}</p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl text-center">
+            <h3 className="font-bold mb-2">Contraseña temporal</h3>
+            <p className="text-xl font-mono">{tempPassword}</p>
             <button onClick={() => setShowTempModal(false)}>Cerrar</button>
           </div>
         </div>
       )}
 
-      {/* MESSAGE */}
-      {msg && <div>{msg.text}</div>}
+      {msg && (
+        <div className="text-sm text-center">
+          {msg.text}
+        </div>
+      )}
 
     </div>
   );
