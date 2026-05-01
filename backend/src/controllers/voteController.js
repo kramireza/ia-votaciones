@@ -120,7 +120,7 @@ async function castVote(req, res) {
         message: "Ya votó en esta votación."
       });
     }
-    
+
     // 🔍 DETECCIÓN POR FINGERPRINT
     if (fingerprint) {
       const sameDeviceVotes = await Vote.count({
@@ -326,33 +326,59 @@ async function exportResultsExcel(req, res) {
       raw: true
     });
 
-    // 🔥 FIX: obtener secciones desde la elección
-    const sections = election.sections || [];
+    let rows = [];
 
-    const rows = [];
-    sections.forEach((section) => {
-      section.options.forEach((opt) => {
+    // ================= SIMPLE =================
+    if (election.type === "simple") {
+
+      const options = election.options || [];
+
+      options.forEach(opt => {
         let count = 0;
 
-        votes.forEach((v) => {
-
-          try {
-            const parsed = JSON.parse(v.option);
-
-            if (parsed[section.title] === opt.text) {
-              count++;
-            }
-          } catch {}
+        votes.forEach(v => {
+          if (v.option === opt.text) {
+            count++;
+          }
         });
 
         rows.push({
           pollId,
-          option:
-            `${section.title} - ${opt.text}`,
+          option: typeof opt === "object" ? opt.text : opt,
           count
         });
       });
-    });
+
+    }
+
+    // ================= COMPOUND =================
+    else {
+
+      const sections = election.sections || [];
+
+      sections.forEach((section) => {
+        section.options.forEach((opt) => {
+          let count = 0;
+
+          votes.forEach((v) => {
+            try {
+              const parsed = JSON.parse(v.option);
+
+              if (parsed[section.title] === opt.text) {
+                count++;
+              }
+            } catch {}
+          });
+
+          rows.push({
+            pollId,
+            option: `${section.title} - ${opt.text}`,
+            count
+          });
+        });
+      });
+
+    }
 
     const buffer =
       await exportResultsToExcel(rows);
