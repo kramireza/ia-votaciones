@@ -112,6 +112,13 @@ export default {
       }
     ),
 
+    changeOwnPassword: (data, token) =>
+      api.post("/admin-users/change-own-password", data, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }),
+
   // -----------------------------
   // Reportes
   // -----------------------------
@@ -411,4 +418,16 @@ export default {
         }
       }
     )
+    
 };
+// 🔥 AUTO LOGOUT SI TOKEN EXPIRA
+api.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem("admin_token");
+      window.location.replace("/votaciones/");
+    }
+    return Promise.reject(err);
+  }
+);

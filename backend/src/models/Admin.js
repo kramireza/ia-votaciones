@@ -35,7 +35,7 @@ const Admin = sequelize.define("Admin", {
     allowNull: false,
     validate: {
       notEmpty: true,
-      len: [10, 255] // bcrypt hashes seguros
+      len: [10, 255]
     }
   },
 
@@ -49,11 +49,17 @@ const Admin = sequelize.define("Admin", {
   lastLoginAt: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+
+  // 🔥 NUEVO — forzar cambio de contraseña
+  mustChangePassword: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 
 }, {
   tableName: "admins",
-  timestamps: false, // ⚠️ no lo activamos para no romper DB actual
+  timestamps: false,
 });
 
 module.exports = Admin;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Layout from "./components/Layout";
@@ -16,6 +16,27 @@ export default function App() {
   const [adminToken, setAdminToken] = useState(
     localStorage.getItem("admin_token") || null
   );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const token = localStorage.getItem("admin_token");
+
+      if (!token) return;
+
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const now = Date.now() / 1000;
+
+        if (payload.exp < now) {
+          handleAdminLogout();
+        }
+      } catch {
+        handleAdminLogout();
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // ==========================================================
   // ESTUDIANTE

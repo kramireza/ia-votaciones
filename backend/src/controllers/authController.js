@@ -54,6 +54,10 @@ async function login(req, res) {
       { expiresIn: "8h" }
     );
 
+    // 🔥 NUEVO — actualizar último login
+    admin.lastLoginAt = new Date();
+    await admin.save();
+
     // 🔥 LOG PRO
     await logAction({
       admin,
@@ -64,7 +68,10 @@ async function login(req, res) {
       req
     });
 
-    res.json({ token });
+    res.json({
+      token,
+      mustChangePassword: admin.mustChangePassword // 🔥 NUEVO
+    });
 
   } catch (err) {
     console.error("Login error:", err);
