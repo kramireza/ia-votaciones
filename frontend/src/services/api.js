@@ -24,9 +24,11 @@ async function generateSignature(studentAccount, pollId) {
     encoder.encode(studentAccount + pollId)
   );
 
-  return btoa(
-    String.fromCharCode(...new Uint8Array(signature))
-  );
+  const bytes = new Uint8Array(signature);
+
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // ============================================================
