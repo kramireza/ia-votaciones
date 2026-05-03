@@ -9,6 +9,7 @@ const {
   createElection,
   getElections,
   getActiveElection,
+  getActiveElectionsSmart,
   changeElectionStatus,
   deleteVotes,
   deleteElection,
@@ -19,6 +20,8 @@ const {
 // 🔵 RUTA PÚBLICA
 // ============================================================
 router.get("/active", getActiveElection);
+// 🔵 NUEVO — MULTI ELECCIÓN
+router.get("/active-smart", getActiveElectionsSmart);
 
 // ============================================================
 // 🔵 CREAR ELECCIÓN

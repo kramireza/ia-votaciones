@@ -113,9 +113,48 @@ const Election = sequelize.define("Election", {
     type: DataTypes.ENUM("open", "closed"),
     defaultValue: "closed",
   },
+
+  // 🔥 MODO DE ELECCIÓN
+  mode: {
+    type: DataTypes.ENUM("single", "multi"),
+    defaultValue: "single"
+  },
+
+  // 🔥 SEGMENTACIÓN (para multi)
+  segmentType: {
+    type: DataTypes.ENUM("career", "faculty", "center", "global"),
+    allowNull: true
+  },
+
+  segmentValue: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+
+  // 🔥 CONTROL DE FECHAS
+  startDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+
+  endDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
 }, {
   hooks: {
     beforeSave: (election) => {
+
+      // 🔐 VALIDACIÓN MULTI
+      if (election.mode === "multi") {
+        if (!election.segmentType) {
+          throw new Error("Debe definir segmentType en modo multi");
+        }
+
+        if (election.segmentType !== "global" && !election.segmentValue) {
+          throw new Error("Debe definir segmentValue");
+        }
+      }
 
       // 🔥 VALIDACIÓN CRUZADA (CLAVE)
       if (election.type === "simple") {

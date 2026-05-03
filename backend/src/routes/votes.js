@@ -4,6 +4,7 @@ const router = express.Router();
 
 const {
   castVote,
+  castMultipleVotes,
   getVotesForAdmin,
   exportVotesExcel,
   exportResultsExcel,
@@ -103,6 +104,13 @@ router.post(
   basicBotProtection,
   validateCastVote,
   castVote
+);
+
+router.post(
+  "/cast-multiple",
+  voteLimiter,
+  basicBotProtection,
+  castMultipleVotes
 );
 
 // Revisar si ya votó

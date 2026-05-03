@@ -1,4 +1,5 @@
 const Election = require("../models/Election");
+const Student = require("../models/Student");
 const Vote = require("../models/Vote");
 const fs = require("fs");
 
@@ -42,8 +43,19 @@ async function getActiveElection(req, res) {
 // =====================================================
 async function createElection(req, res) {
   try {
-    let { pollId, title, type } = req.body;
+    let {
+      pollId,
+      title,
+      type,
+      mode,
+      segmentType,
+      segmentValue,
+      startDate,
+      endDate
+    } = req.body;
 
+
+    mode = mode || "single";
     type = type || "simple";
     title = cleanString(title);
 
@@ -146,7 +158,12 @@ async function createElection(req, res) {
       type,
       options,
       sections,
-      status: "closed"
+      status: "closed",
+      mode,
+      segmentType,
+      segmentValue,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
     });
 
     await logAction({
@@ -397,10 +414,118 @@ async function deleteElection(req, res) {
   }
 }
 
+// =====================================================
+// 🔵 NUEVO — MULTI ELECCIÓN INTELIGENTE
+// =====================================================
+async function getActiveElectionsSmart(req, res) {
+  try {
+    const { studentAccount } = req.query;
+
+    if (!studentAccount) {
+      return res.status(400).json({
+        message: "Cuenta requerida"
+      });
+    }
+
+    // ⚠️ Aquí debes obtener el estudiante desde tu lógica actual
+    // Ajusta esto según tu modelo real
+    const student = await Student.findOne({
+      where: { accountNumber: studentAccount }
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Estudiante no encontrado"
+      });
+    }
+
+    const now = new Date();
+
+    const elections = await Election.findAll({
+      where: { status: "open" }
+    });
+
+    // 🔥 separar modos
+    const singleElections = elections.filter(e => e.mode === "single");
+    const multiElections = elections.filter(e => e.mode === "multi");
+
+    let valid = [];
+
+    // ===================================================
+    // 🔵 CASO 1: EXISTE SINGLE (modo actual)
+    // ===================================================
+    if (singleElections.length > 0) {
+
+      const single = singleElections.find(e => {
+        if (e.startDate && now < new Date(e.startDate)) return false;
+        if (e.endDate && now > new Date(e.endDate)) return false;
+        return true;
+      });
+
+      if (single) {
+        return res.json({
+          mode: "single",
+          elections: [single]
+        });
+      }
+    }
+
+    // ===================================================
+    // 🔵 CASO 2: MULTI ELECCIÓN
+    // ===================================================
+    valid = multiElections.filter(e => {
+
+      if (e.startDate && now < new Date(e.startDate)) return false;
+      if (e.endDate && now > new Date(e.endDate)) return false;
+
+      // 🌐 GLOBAL
+      if (e.segmentType === "global") return true;
+
+      // 🏫 CENTER
+      if (
+        e.segmentType === "center" &&
+        String(student.center).trim().toLowerCase() ===
+        String(e.segmentValue).trim().toLowerCase()
+      ) return true;
+
+      // 🎓 CAREER (listo para futuro)
+      if (
+        e.segmentType === "career" &&
+        student.career &&
+        String(student.career).trim().toLowerCase() ===
+        String(e.segmentValue).trim().toLowerCase()
+      ) return true;
+
+      // 🏛 FACULTY (listo para futuro)
+      if (
+        e.segmentType === "faculty" &&
+        student.faculty &&
+        String(student.faculty).trim().toLowerCase() ===
+        String(e.segmentValue).trim().toLowerCase()
+      ) return true;
+      
+      return false;
+    });
+
+    return res.json({
+      mode: "multi",
+      elections: valid
+    });
+
+  } catch (err) {
+    console.error("SMART ERROR:", err);
+
+    return res.status(500).json({
+      message: "Error obteniendo elecciones inteligentes"
+    });
+  }
+}
+
 module.exports = {
   createElection,
   getElections,
   getActiveElection,
+  getActiveElectionsSmart,
   changeElectionStatus,
   editElection,
   deleteVotes,

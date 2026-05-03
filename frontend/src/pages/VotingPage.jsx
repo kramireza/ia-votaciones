@@ -12,8 +12,10 @@ export default function VotingPage({
 }) {
   const navigate = useNavigate();
 
-  const [poll, setPoll] = useState(null);
-  const [selected, setSelected] = useState("");
+  const [mode, setMode] = useState("single");
+  const [elections, setElections] = useState([]);
+
+  const [selected, setSelected] = useState({});
   const [answers, setAnswers] = useState({});
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -23,30 +25,31 @@ export default function VotingPage({
 
   const sectionRefs = useRef({});
 
-  const voteKey = poll
-    ? `voted_${poll.pollId}_${student.accountNumber}`
-    : null;
-
   const voteLocked =
     status?.type === "success" ||
     status?.type === "info";
 
   useEffect(() => {
-    async function loadPoll() {
+    async function loadElections() {
       try {
         const res =
-          await api.getActiveElection();
-        setPoll(res.data);
+          await api.getActiveElectionsSmart(
+            student.accountNumber
+          );
+
+        setMode(res.data.mode);
+        setElections(res.data.elections || []);
+
       } catch {
         setStatus({
           type: "error",
           text:
-            "No se pudo cargar la elección activa."
+            "No se pudieron cargar las elecciones."
         });
       }
     }
 
-    loadPoll();
+    loadElections();
   }, []);
 
   useEffect(() => {
@@ -197,76 +200,42 @@ export default function VotingPage({
   }
 
   async function confirmVote() {
-    if (
-      !poll ||
-      !student ||
-      submitting ||
-      voteLocked
-    )
-      return;
+    if (submitting) return;
 
     setSubmitting(true);
-
-    const type =
-      poll.type || "simple";
 
     try {
       const fingerprint = generateFingerprint();
 
-      const signature = await generateSignature(
-        student.accountNumber,
-        poll.pollId
-      );
+      const votes = elections.map(e => ({
+        pollId: e.pollId,
+        option: selected[e.pollId] || null,
+        answers: answers[e.pollId] || null
+      }));
 
       const payload = {
         studentAccount: student.accountNumber,
         studentName: student.name,
         studentCenter: student.center,
-        pollId: poll.pollId,
         fingerprint,
-        signature
+        votes
       };
 
-      if (type === "simple") {
-        payload.option =
-          selected;
-      } else {
-        payload.answers =
-          answers;
-      }
-
-      await api.castVote(
-        payload
-      );
-
-      localStorage.setItem(
-        voteKey,
-        JSON.stringify({
-          type,
-          option:
-            selected,
-          answers,
-          timestamp:
-            new Date().toISOString()
-        })
-      );
+      await api.castMultipleVotes(payload);
 
       setShowConfirmModal(false);
 
       setStatus({
         type: "success",
-        text:
-          "Voto registrado correctamente. Gracias por participar."
+        text: "Votos registrados correctamente"
       });
-    } catch (err) {
-      setShowConfirmModal(false);
 
+    } catch (err) {
       setStatus({
         type: "error",
         text:
-          err.response?.data
-            ?.message ||
-          "Error al registrar voto."
+          err.response?.data?.message ||
+          "Error al votar"
       });
     } finally {
       setSubmitting(false);
@@ -278,7 +247,7 @@ export default function VotingPage({
     setShowConfirmModal(false);
   }
 
-  if (!poll) {
+  if (!elections.length) {
     return (
       <div className="rounded-3xl border shadow p-6 bg-white text-slate-700 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
         Cargando elección...
@@ -331,6 +300,62 @@ export default function VotingPage({
             }
           </p>
         </div>
+        
+        {mode === "multi" && (
+          <div className="space-y-6">
+
+            {elections.map((poll, index) => {
+              const type = poll.type || "simple";
+
+              return (
+                <div key={poll.pollId} className="rounded-3xl border shadow p-5 bg-white dark:bg-slate-900 dark:border-slate-800">
+
+                  <h3 className="text-xl font-bold text-indigo-600 mb-4">
+                    {poll.title}
+                  </h3>
+
+                  {/* SIMPLE */}
+                  {type === "simple" && (
+                    <div className="grid gap-3">
+                      {(poll.options || []).map((opt, i) => {
+                        const isActive =
+                          selected[poll.pollId] === opt.text;
+
+                        return (
+                          <label
+                            key={i}
+                            className={`p-3 rounded-xl border ${
+                              isActive
+                                ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-500/10"
+                                : ""
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              checked={isActive}
+                              onChange={() =>
+                                setSelected({
+                                  ...selected,
+                                  [poll.pollId]: opt.text
+                                })
+                              }
+                            />
+
+                            <span className="ml-2">
+                              {opt.text}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                </div>
+              );
+            })}
+
+          </div>
+        )}
 
         <form
           onSubmit={submitVote}

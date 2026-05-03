@@ -24,6 +24,10 @@ ChartJS.register(
 
 export default function ResultsPanel({ token }) {
   const [results, setResults] = useState([]);
+  const [multiResults, setMultiResults] = useState([]);
+  const [filters, setFilters] = useState({
+    center: ""
+  });
   const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -36,22 +40,23 @@ export default function ResultsPanel({ token }) {
     try {
       const res = await api.getAllResults(token);
 
-      let list = [];
-
       if (Array.isArray(res.data)) {
-        list = res.data;
-      } else if (res.data && typeof res.data === "object") {
-        list = [res.data];
+        setMultiResults(res.data);
+        setResults([]);
+      } else {
+        const list = Array.isArray(res.data)
+          ? res.data
+          : [res.data];
+
+        setResults(list);
+        setMultiResults([]);
       }
 
-      setResults(list);
-
-      if (list.length > 0) {
-        setSelectedId((prev) => prev || list[0].pollId);
-      }
     } catch (err) {
       console.error(err);
       setResults([]);
+      setMultiResults([]);
+
     } finally {
       setLoading(false);
     }
@@ -180,6 +185,23 @@ export default function ResultsPanel({ token }) {
             Seleccionar elección
           </label>
 
+          {/* 🔥 FILTROS MULTI */}
+          {multiResults.length > 0 && (
+            <div className="flex gap-3 mb-4">
+              <select
+                className="px-4 py-2 rounded-xl border"
+                value={filters.center}
+                onChange={(e) =>
+                  setFilters({ ...filters, center: e.target.value })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="VS">VS</option>
+                <option value="CU">CU</option>
+              </select>
+            </div>
+          )}
+
           <select
             className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition bg-white text-slate-900 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             value={selectedId}
@@ -233,6 +255,23 @@ export default function ResultsPanel({ token }) {
       {!selected && (
         <div className="rounded-3xl bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-xl p-10 text-center text-slate-500 dark:text-slate-400">
           No hay resultados disponibles.
+        </div>
+      )}
+
+      {/* 🔥 MULTI ADMIN */}
+      {multiResults.length > 0 && (
+        <div className="space-y-6">
+          {multiResults
+            .filter(e => {
+              if (!filters.center) return true;
+              return e.centerStats?.[filters.center] !== undefined;
+            })
+            .map((e, i) => (
+              <div key={i} className="border p-4 rounded-xl">
+                <h3 className="font-bold text-xl">{e.title}</h3>
+                <div>Total votos: {e.totalVotes}</div>
+              </div>
+            ))}
         </div>
       )}
 

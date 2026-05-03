@@ -36,6 +36,12 @@ export default function PublicResults() {
   const [data, setData] =
     useState(null);
 
+  // 🔥 MULTI MODE
+  const [multiData, setMultiData] = useState([]);
+  const [filters, setFilters] = useState({
+    center: ""
+  });
+
   const [loading, setLoading] =
     useState(true);
 
@@ -60,26 +66,28 @@ export default function PublicResults() {
 
   async function loadResults() {
     try {
-      const res =
-        await api.getPublicResults();
+      const res = await api.getPublicResults();
 
-      setData(res.data);
+      // 🔥 DETECTAR MULTI
+      if (Array.isArray(res.data)) {
+        setMultiData(res.data);
+        setData(null);
+      } else {
+        setData(res.data);
+        setMultiData([]);
+      }
 
-      // ===============================
-      // 🔥 NUEVA LÍNEA AGREGADA
-      // ===============================
       setLastUpdate(new Date());
-
       setError("");
 
     } catch (err) {
       setError(
-        err.response?.data
-          ?.message ||
-          "No se pudieron cargar resultados."
+        err.response?.data?.message ||
+        "No se pudieron cargar resultados."
       );
 
       setData(null);
+      setMultiData([]);
 
     } finally {
       setLoading(false);
@@ -155,7 +163,7 @@ export default function PublicResults() {
     );
   }
 
-  if (!data) return null;
+  if (!data && multiData.length === 0) return null;
 
   const type =
     data.type || "simple";
@@ -234,6 +242,27 @@ export default function PublicResults() {
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* HEADER */}
+        {/* 🔥 FILTRO MULTI */}
+        {multiData.length > 0 && (
+          <div className="rounded-3xl border p-4 bg-white dark:bg-slate-900 dark:border-slate-800">
+            <div className="flex flex-wrap gap-3">
+
+              <select
+                className="px-4 py-2 rounded-xl border dark:bg-slate-800"
+                value={filters.center}
+                onChange={(e) =>
+                  setFilters({ ...filters, center: e.target.value })
+                }
+              >
+                <option value="">Todos los centros</option>
+                <option value="VS">VS</option>
+                <option value="CU">CU</option>
+                <option value="Danli">Danlí</option>
+              </select>
+
+            </div>
+          </div>
+        )}
         <div className="rounded-3xl shadow-xl border p-6 bg-white dark:bg-slate-900 dark:border-slate-800">
 
           <div className="flex flex-col lg:flex-row justify-between gap-6">
@@ -364,6 +393,43 @@ export default function PublicResults() {
                 );
               }
             )}
+          </div>
+        )}
+
+        {/* 🔥 MULTI RESULTS */}
+        {multiData.length > 0 && (
+          <div className="space-y-8">
+            {multiData
+              .filter(e => {
+                if (!filters.center) return true;
+                return e.centerStats?.[filters.center] !== undefined;
+              })
+              .map((election, index) => (
+                <div
+                  key={index}
+                  className="rounded-3xl shadow-xl border p-6 bg-white dark:bg-slate-900 dark:border-slate-800"
+                >
+                  <h2 className="text-2xl font-black text-indigo-500">
+                    {election.title}
+                  </h2>
+
+                  <div className="mt-4 text-lg font-bold">
+                    Total votos: {election.totalVotes}
+                  </div>
+
+                  {/* SIMPLE */}
+                  {election.type === "simple" && (
+                    <div className="mt-4 space-y-3">
+                      {election.options.map((opt, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span>{opt.text}</span>
+                          <span>{opt.votes}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
           </div>
         )}
 

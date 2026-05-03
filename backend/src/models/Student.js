@@ -67,7 +67,17 @@ const Student = sequelize.define("Student", {
       if (!value) return;
       this.setDataValue("email", cleanString(value, 150));
     }
-  }
+  },
+
+  career: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+
+  faculty: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
 
 }, {
   tableName: "students",

@@ -440,9 +440,32 @@ export default {
           Authorization: `Bearer ${token}`
         }
       }
-    )
+    ),
+
+  // 🔥 MULTI ELECCIÓN
+  getActiveElectionsSmart: (studentAccount) =>
+    api.get(`/elections/active-smart`, {
+      params: { studentAccount }
+    }),
+
+  castMultipleVotes: (payload) =>
+    api.post(`/votes/cast-multiple`, payload),
     
 };
+
+// ======================================
+// 🔥 MULTI RESULTS
+// ======================================
+
+export const getPublicResultsMulti = (filters = {}) =>
+  api.get("/votes/public/results-multi", { params: filters });
+
+export const getAdminResultsMulti = (token, filters = {}) =>
+  api.get("/votes/admin/results-multi", {
+    headers: { Authorization: `Bearer ${token}` },
+    params: filters
+  });
+  
 // 🔥 AUTO LOGOUT SI TOKEN EXPIRA
 api.interceptors.response.use(
   res => res,

@@ -777,8 +777,161 @@ async function getAllResults(req, res) {
   }
 }
 
+// ============================================================
+// 🔥 MULTI VOTO (BATCH)
+// ============================================================
+async function castMultipleVotes(req, res) {
+
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0] ||
+    req.socket.remoteAddress ||
+    req.ip;
+
+  // 🔒 IP bloqueada
+  const blocked = await BlockedIP.findOne({
+    where: { ipAddress: ip }
+  });
+
+  if (blocked) {
+    return res.status(403).json({
+      message: "Acceso bloqueado"
+    });
+  }
+
+  try {
+    let {
+      studentAccount,
+      studentName,
+      studentCenter,
+      fingerprint,
+      votes
+    } = req.body;
+
+    studentAccount = String(studentAccount || "").trim();
+
+    if (!studentAccount || !Array.isArray(votes)) {
+      return res.status(400).json({
+        message: "Datos inválidos"
+      });
+    }
+
+    const createdVotes = [];
+
+    for (const v of votes) {
+
+      const pollId = String(v.pollId || "").trim();
+
+      if (!pollId) continue;
+
+      const election = await Election.findOne({
+        where: { pollId }
+      });
+
+      if (!election) continue;
+
+      // 🔒 VALIDAR DOBLE VOTO
+      const existing = await Vote.findOne({
+        where: { pollId, studentAccount }
+      });
+
+      if (existing) {
+        await FraudLog.create({
+          ipAddress: ip,
+          pollId,
+          type: "duplicate",
+          message: "Intento doble en multi"
+        });
+        continue;
+      }
+
+      const type = election.type || "simple";
+
+      // 🔍 CONTROL POR IP
+      const votesFromIP = await Vote.count({
+        where: {
+          pollId,
+          ipAddress: ip
+        }
+      });
+
+      if (votesFromIP >= 5) {
+        await FraudLog.create({
+          ipAddress: ip,
+          pollId,
+          type: "blocked",
+          message: "IP límite en multi"
+        });
+        continue;
+      }
+
+      // 🔍 FINGERPRINT
+      if (fingerprint) {
+        const sameDeviceVotes = await Vote.count({
+          where: {
+            pollId,
+            fingerprint
+          }
+        });
+
+        if (sameDeviceVotes >= 2) {
+          await FraudLog.create({
+            ipAddress: ip,
+            pollId,
+            type: "fingerprint",
+            message: "Multi voto sospechoso"
+          });
+        }
+      }
+
+      // ================= SIMPLE =================
+      if (type === "simple" && v.option) {
+        const vote = await Vote.create({
+          studentAccount,
+          studentName,
+          studentCenter,
+          pollId,
+          option: v.option,
+          ipAddress: ip,
+          fingerprint
+        });
+
+        createdVotes.push(vote);
+      }
+
+      // ================= COMPOUND =================
+      if (type === "compound" && v.answers) {
+        const vote = await Vote.create({
+          studentAccount,
+          studentName,
+          studentCenter,
+          pollId,
+          option: JSON.stringify(v.answers),
+          ipAddress: ip,
+          fingerprint
+        });
+
+        createdVotes.push(vote);
+      }
+
+    }
+
+    return res.json({
+      message: "Votos registrados",
+      total: createdVotes.length
+    });
+
+  } catch (error) {
+    console.error("Error castMultipleVotes:", error);
+
+    return res.status(500).json({
+      message: "Error registrando votos múltiples"
+    });
+  }
+}
+
 module.exports = {
   castVote,
+  castMultipleVotes,
   getVotesForAdmin,
   exportVotesExcel,
   exportResultsExcel,
